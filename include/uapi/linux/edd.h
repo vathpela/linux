@@ -156,11 +156,15 @@ struct edd_device_params {
 		} __attribute__ ((packed)) raid;
 		struct {
 			__u8 device;
-			__u8 reserved1;
+			__u8 pmp;
 			__u16 reserved2;
 			__u32 reserved3;
 			__u64 reserved4;
 		} __attribute__ ((packed)) sata;
+		struct {
+			__u64 address;
+			__u64 lun;
+		} __attribute__ ((packed)) sas;
 		struct {
 			__u64 reserved1;
 			__u64 reserved2;

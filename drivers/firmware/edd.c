@@ -152,15 +152,15 @@ edd_show_host_bus(struct edd_device *edev, char *buf)
 			     info->params.interface_path.isa.base_address);
 	} else if (!strncmp(info->params.host_bus_type, "PCIX", 4) ||
 		   !strncmp(info->params.host_bus_type, "PCI", 3) ||
-		   !strncmp(info->params.host_bus_type, "XPRS", 4)) {
+		   !strncmp(info->params.host_bus_type, "XPRS", 4) ||
+		   !strncmp(info->params.host_bus_type, "HTPT", 4)) {
 		p += scnprintf(p, left,
 			     "\t%02x:%02x.%d  channel: %u\n",
 			     info->params.interface_path.pci.bus,
 			     info->params.interface_path.pci.slot,
 			     info->params.interface_path.pci.function,
 			     info->params.interface_path.pci.channel);
-	} else if (!strncmp(info->params.host_bus_type, "IBND", 4) ||
-		   !strncmp(info->params.host_bus_type, "HTPT", 4)) {
+	} else if (!strncmp(info->params.host_bus_type, "IBND", 4)) {
 		p += scnprintf(p, left,
 			     "\tTBD: %llx\n",
 			     info->params.interface_path.ibnd.reserved);
@@ -220,8 +220,13 @@ edd_show_interface(struct edd_device *edev, char *buf)
 		p += scnprintf(p, left, "\tidentity_tag: %x\n",
 			     info->params.device_path.raid.array_number);
 	} else if (!strncmp(info->params.interface_type, "SATA", 4)) {
-		p += scnprintf(p, left, "\tdevice: %u\n",
-			     info->params.device_path.sata.device);
+		p += scnprintf(p, left, "\tdevice: %u pmp: %u\n",
+			     info->params.device_path.sata.device,
+			     info->params.device_path.sata.pmp);
+	} else if (!strncmp(info->params.interface_type, "SAS", 3)) {
+		p += scnprintf(p, left, "\taddress: %llx lun: %llx\n",
+			       info->params.device_path.sas.address,
+			       info->params.device_path.sas.lun);
 	} else {
 		p += scnprintf(p, left, "\tunknown: %llx %llx\n",
 			     info->params.device_path.unknown.reserved1,
