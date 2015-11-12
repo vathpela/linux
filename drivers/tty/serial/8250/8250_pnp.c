@@ -485,6 +485,9 @@ serial_pnp_probe(struct pnp_dev *dev, const struct pnp_device_id *dev_id)
 	if (uart_console(&port->port))
 		dev->capabilities |= PNP_CONSOLE;
 
+	sysfs_create_link(&port->port.dev->kobj, &dev->dev.kobj,
+			  "firmware_node");
+
 	pnp_set_drvdata(dev, (void *)((long)line + 1));
 	return 0;
 }
