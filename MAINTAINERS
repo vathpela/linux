@@ -5423,6 +5423,13 @@ L:	linux-efi@vger.kernel.org
 S:	Maintained
 F:	fs/efivarfs/
 
+EFI ESRT and IEIT config table drivers
+L:	linux-fbdev@vger.kernel.org
+M:	Peter Jones <pjones@redhat.com>
+S:	Maintained
+F:	drivers/firmware/efi/esrt.c
+F:	drivers/firmware/efi/ieit.c
+
 EFIFB FRAMEBUFFER DRIVER
 L:	linux-fbdev@vger.kernel.org
 M:	Peter Jones <pjones@redhat.com>

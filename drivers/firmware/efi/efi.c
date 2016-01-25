@@ -41,6 +41,7 @@ struct efi __read_mostly efi = {
 	.smbios			= EFI_INVALID_TABLE_ADDR,
 	.smbios3		= EFI_INVALID_TABLE_ADDR,
 	.sal_systab		= EFI_INVALID_TABLE_ADDR,
+	.ieit			= EFI_INVALID_TABLE_ADDR,
 	.boot_info		= EFI_INVALID_TABLE_ADDR,
 	.hcdp			= EFI_INVALID_TABLE_ADDR,
 	.uga			= EFI_INVALID_TABLE_ADDR,
@@ -472,6 +473,7 @@ void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 }
 
 static __initdata efi_config_table_type_t common_tables[] = {
+	{EFI_IMAGE_EXECUTION_INFO_TABLE_GUID, "IEIT", &efi.ieit},
 	{ACPI_20_TABLE_GUID, "ACPI 2.0", &efi.acpi20},
 	{ACPI_TABLE_GUID, "ACPI", &efi.acpi},
 	{HCDP_TABLE_GUID, "HCDP", &efi.hcdp},

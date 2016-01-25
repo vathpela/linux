@@ -1,0 +1,67 @@
+What:		/sys/firmware/efi/ieit/
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	Provides userland access to read the EFI Image Execution Info
+		Table (IEIT), a log of images which were launched or attempted
+		to be launched during boot.  The IEIT is described by (ESRT), a
+		catalog of firmware for which can be updated with the UEFI
+		UpdateCapsule mechanism described in section 7.5 of the UEFI
+		Standard.
+
+What:		/sys/firmware/efi/ieit/entry$N/
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	An ordered list of directories, each representing one entry in
+		the IEIT, and thus each represents one attempt to verify an
+		executable image.
+
+What:		/sys/firmware/efi/ieit/entry$N/action
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	The result of each execution which was attempted.  This can
+		have three values, each separated by a space.
+		The first will be one of:
+			auth-untested - image was not tested (typically this
+					means a BIOS image was booted.)
+			sig-failed - image signature verification failed
+			sig-passed - image signature verification passed
+			sig-missing - image signature not found
+			sig-found - image signature found
+			policy-failed - configured policy does not allow
+				execution
+			invalid-0x$X - a value which is not in the standard
+				(i.e. "invalid-0x00000008")
+		The second value will be one of:
+			initialized - the image was started
+			uninitialized - the image was not started
+		The third value is the raw value of this field, formatted as
+		0x-prefixed hex.
+
+What:		/sys/firmware/efi/ieit/entry$N/signature-data
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	The binary signature being validated in this entry.
+
+What:		/sys/firmware/efi/ieit/entry$N/signature-type
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	The type of signature - this is a GUID which matches the
+		signature type specified in the UEFI Standard, section
+		30.4.1 .
+
+What:		/sys/firmware/efi/ieit/entry$N/name
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	If this entry represents a UEFI device driver, such as an
+		option ROM, this is the user-friendly name it registered
+		during initialization.  If this is unavailable, it'll be
+		an empty string (i.e. just a newline in the file.)
+
+What:		/sys/firmware/efi/ieit/entry$N/device-path
+Date:		February 2015
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	The binary UEFI Device Path for the binary being
+		validated, if available.  If this isn't available, the
+		value here will be a device path entry with "type"
+		"End of Device Path" and a subtype of "End Entire Device
+		Path".

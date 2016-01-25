@@ -23,6 +23,11 @@ config EFI_ESRT
 	depends on EFI && !IA64
 	default y
 
+config EFI_IEIT
+	bool
+	depends on EFI && !IA64
+	default y
+
 config EFI_VARS_PSTORE
 	tristate "Register efivars backend for pstore"
 	depends on EFI_VARS && PSTORE
