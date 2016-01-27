@@ -1262,6 +1262,11 @@ extern int efi_status_to_err(efi_status_t status);
 #define   EFI_DEV_END_INSTANCE			0x01
 #define   EFI_DEV_END_ENTIRE			0xFF
 
+#define efi_dev_end_entire(dev) \
+	((((dev)->type == EFI_DEV_END_PATH) || \
+	  ((dev)->type == EFI_DEV_END_PATH2)) \
+	 && ((dev)->sub_type == EFI_DEV_END_ENTIRE))
+
 struct efi_generic_dev_path {
 	u8 type;
 	u8 sub_type;
@@ -1287,6 +1292,7 @@ struct efi_dev_path {
 #if IS_ENABLED(CONFIG_EFI_DEV_PATH_PARSER)
 struct device *efi_get_device_by_path(struct efi_dev_path **node, size_t *len);
 #endif
+ssize_t efi_dev_path_size(struct efi_generic_dev_path *dev, unsigned int limit);
 
 static inline void memrange_efi_to_native(u64 *addr, u64 *npages)
 {

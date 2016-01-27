@@ -810,6 +810,69 @@ int __init efi_get_fdt_params(struct efi_fdt_params *params)
 }
 #endif /* CONFIG_EFI_PARAMS_FROM_FDT */
 
+/*
+ * efi_dev_path_size - compute the size of a struct efi_generic_dev_path
+ * @dev: a pointer to a dev path node
+ * @limit: maximum number of bytes to consider
+ *
+ * Returns the size of the device path, or -EINVAL if an end entire path node
+ * is not reached below the limit.
+ */
+ssize_t efi_dev_path_size(struct efi_generic_dev_path *dev, unsigned int limit)
+{
+	int i = 0;
+	ssize_t ret = 0;
+	u8 *max = (u8 *)dev + limit;
+
+	do {
+		u8 *addr = (u8 *)dev + ret;
+		struct efi_generic_dev_path *dp =
+			(struct efi_generic_dev_path *)addr;
+		u8 *top;
+
+		pr_debug("dev node %d is at %p\n", i, addr);
+		/*
+		 * make sure ->length itself is in bounds
+		 */
+		if (addr > max) {
+			pr_debug("dev start %p is not within limit %p\n",
+				 addr, max);
+			return -EINVAL;
+		}
+		top = addr + sizeof(struct efi_generic_dev_path) - 1;
+		if (top > max) {
+			pr_debug("dev header end %p is not within limit %p\n",
+				 top, max);
+			return -EINVAL;
+		}
+		pr_debug("dev type 0x%02x subtype 0x%02x length %d\n",
+			 dp->type, dp->sub_type, dp->length);
+
+		/*
+		 * make sure ->length points within bounds
+		 */
+		top = addr + dp->length - 1;
+		if (top > max) {
+			pr_debug("dev extends to %p, beyond limit %p\n",
+				 top, max);
+			return -EINVAL;
+		}
+
+		ret += dp->length;
+
+		if (efi_dev_end_entire(dp)) {
+			pr_debug("dev node is EFI_DEV_END_ENTIRE, size %zd\n",
+				 ret);
+			break;
+		}
+
+		i += 1;
+	} while(i++);
+
+	return ret;
+}
+
+EXPORT_SYMBOL(efi_dev_path_size);
 static __initdata char memory_type_name[][20] = {
 	"Reserved",
 	"Loader Code",

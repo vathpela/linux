@@ -33,6 +33,7 @@
 #include <linux/slab.h>
 #include <linux/ctype.h>
 #include <linux/ucs2_string.h>
+#include <linux/efi.h>
 
 /* Private pointer to registered efivars */
 static struct efivars *__efivars;
@@ -66,9 +67,7 @@ validate_device_path(efi_char16_t *var_name, int match, u8 *buffer,
 		node->length <= len - offset) {
 		offset += node->length;
 
-		if ((node->type == EFI_DEV_END_PATH ||
-		     node->type == EFI_DEV_END_PATH2) &&
-		    node->sub_type == EFI_DEV_END_ENTIRE)
+		if (efi_dev_end_entire(node))
 			return true;
 
 		node = (struct efi_generic_dev_path *)(buffer + offset);
