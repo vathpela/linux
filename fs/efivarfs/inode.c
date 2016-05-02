@@ -104,6 +104,7 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
 		var->var.VariableName[i] = dentry->d_name.name[i];
 
 	var->var.VariableName[i] = '\0';
+	var->needs_write = true;
 
 	inode->i_private = var;
 

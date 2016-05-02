@@ -47,21 +47,17 @@ static ssize_t efivarfs_file_write(struct file *file,
 		goto out;
 	}
 
-	if (bytes == -ENOENT) {
-		drop_nlink(inode);
-		d_delete(file->f_path.dentry);
-		dput(file->f_path.dentry);
-	} else {
-		inode_lock(inode);
-		i_size_write(inode, datasize + sizeof(attributes));
-		inode_unlock(inode);
-	}
+	inode_lock(inode);
+	i_size_write(inode, datasize + sizeof(attributes));
+	inode_unlock(inode);
 
 	bytes = count;
 
 out:
 	kfree(data);
 
+	if (set && bytes > 0)
+		var->needs_write = false;
 	return bytes;
 }
 
@@ -178,10 +174,29 @@ efivarfs_file_ioctl(struct file *file, unsigned int cmd, unsigned long p)
 	return -ENOTTY;
 }
 
+static int
+efivarfs_file_release(struct inode *inode, struct file *file)
+{
+	struct efivar_entry *var = file->private_data;
+	/*
+	 * If we are the last writer, check and make sure some legal write
+	 * has happened, ever.  If there hasn't been one, remove the file.
+	 */
+	if ((file->f_mode & FMODE_WRITE) &&
+	    (atomic_read(&inode->i_writecount) == 1) &&
+	    var->needs_write) {
+		drop_nlink(inode);
+		d_delete(file->f_path.dentry);
+		dput(file->f_path.dentry);
+	}
+	return 0;
+}
+
 const struct file_operations efivarfs_file_operations = {
 	.open	= simple_open,
 	.read	= efivarfs_file_read,
 	.write	= efivarfs_file_write,
 	.llseek	= no_llseek,
 	.unlocked_ioctl = efivarfs_file_ioctl,
+	.release = efivarfs_file_release,
 };

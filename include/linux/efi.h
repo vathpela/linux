@@ -1339,6 +1339,7 @@ struct efivar_entry {
 	struct kobject kobj;
 	bool scanning;
 	bool deleting;
+	bool needs_write;
 };
 
 typedef struct {
