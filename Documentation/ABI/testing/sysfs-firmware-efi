@@ -28,3 +28,9 @@ Description:	Displays the physical addresses of all EFI Configuration
 		versions are always printed first, i.e. ACPI20 comes
 		before ACPI.
 Users:		dmidecode
+
+What:		/sys/firmware/efi/spec_version
+Date:		August 2016
+Contact:	linux-efi@vger.kernel.org
+Description:	Displays the UEFI Specification revision the firmware claims to
+		be based upon.
