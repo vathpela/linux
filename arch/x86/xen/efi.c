@@ -98,7 +98,7 @@ static efi_system_table_t __init *xen_efi_probe(void)
 	op.u.firmware_info.index = XEN_FW_EFI_RT_VERSION;
 
 	if (HYPERVISOR_platform_op(&op) == 0)
-		efi.runtime_version = info->version;
+		efi.spec_version = info->version;
 
 	return &efi_systab_xen;
 }

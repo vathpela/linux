@@ -193,7 +193,7 @@ efi_status_t xen_efi_query_variable_info(u32 attr, u64 *storage_space,
 {
 	struct xen_platform_op op = INIT_EFI_OP(query_variable_info);
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	efi_data(op).u.query_variable_info.attr = attr;
@@ -227,7 +227,7 @@ efi_status_t xen_efi_update_capsule(efi_capsule_header_t **capsules,
 {
 	struct xen_platform_op op = INIT_EFI_OP(update_capsule);
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	set_xen_guest_handle(efi_data(op).u.update_capsule.capsule_header_array,
@@ -248,7 +248,7 @@ efi_status_t xen_efi_query_capsule_caps(efi_capsule_header_t **capsules,
 {
 	struct xen_platform_op op = INIT_EFI_OP(query_capsule_capabilities);
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	set_xen_guest_handle(efi_data(op).u.query_capsule_capabilities.capsule_header_array,

@@ -933,7 +933,7 @@ efi_thunk_query_variable_info(u32 attr, u64 *storage_space,
 	u32 phys_storage, phys_remaining, phys_max;
 	unsigned long flags;
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	spin_lock_irqsave(&efi_runtime_lock, flags);

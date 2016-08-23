@@ -939,7 +939,7 @@ typedef struct {
  */
 extern struct efi {
 	efi_system_table_t *systab;	/* EFI system table */
-	unsigned int runtime_version;	/* Runtime services version */
+	u32 spec_version;		/* EFI Spec revision of our firmware */
 	unsigned long mps;		/* MPS table */
 	unsigned long acpi;		/* ACPI table  (IA64 ext 0.71) */
 	unsigned long acpi20;		/* ACPI table  (ACPI 2.0) */

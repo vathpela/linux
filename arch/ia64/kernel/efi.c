@@ -514,6 +514,9 @@ efi_init (void)
 		panic("Whoa! Can't find EFI system table.\n");
 	if (efi.systab->hdr.signature != EFI_SYSTEM_TABLE_SIGNATURE)
 		panic("Whoa! EFI system table signature incorrect\n");
+
+	efi.spec_version = efi.systab->hdr.version;
+
 	if ((efi.systab->hdr.revision >> 16) == 0)
 		printk(KERN_WARNING "Warning: EFI system table version "
 		       "%d.%02d, expected 1.00 or greater\n",

@@ -385,6 +385,9 @@ static int __init efi_systab_init(void *phys)
 		pr_err("System table signature incorrect!\n");
 		return -EINVAL;
 	}
+
+	efi.spec_version = efi.systab->hdr.revision;
+
 	if ((efi.systab->hdr.revision >> 16) == 0)
 		pr_err("Warning: System table version %d.%02d, expected 1.00 or greater!\n",
 		       efi.systab->hdr.revision >> 16,
@@ -884,7 +887,7 @@ static void __init kexec_enter_virtual_mode(void)
 	 *
 	 * Call EFI services through wrapper functions.
 	 */
-	efi.runtime_version = efi_systab.hdr.revision;
+	efi.spec_version = efi_systab.hdr.revision;
 
 	efi_native_runtime_setup();
 
@@ -1001,8 +1004,6 @@ static void __init __efi_enter_virtual_mode(void)
 	 *
 	 * Call EFI services through wrapper functions.
 	 */
-	efi.runtime_version = efi_systab.hdr.revision;
-
 	if (efi_is_native())
 		efi_native_runtime_setup();
 	else

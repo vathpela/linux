@@ -347,7 +347,7 @@ static efi_status_t virt_efi_query_variable_info(u32 attr,
 {
 	efi_status_t status;
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	if (down_interruptible(&efi_runtime_lock))
@@ -366,7 +366,7 @@ virt_efi_query_variable_info_nonblocking(u32 attr,
 {
 	efi_status_t status;
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	if (down_trylock(&efi_runtime_lock))
@@ -411,7 +411,7 @@ static efi_status_t virt_efi_update_capsule(efi_capsule_header_t **capsules,
 {
 	efi_status_t status;
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	if (down_interruptible(&efi_runtime_lock))
@@ -429,7 +429,7 @@ static efi_status_t virt_efi_query_capsule_caps(efi_capsule_header_t **capsules,
 {
 	efi_status_t status;
 
-	if (efi.runtime_version < EFI_2_00_SYSTEM_TABLE_REVISION)
+	if (efi.spec_version < EFI_2_00_SYSTEM_TABLE_REVISION)
 		return EFI_UNSUPPORTED;
 
 	if (down_interruptible(&efi_runtime_lock))

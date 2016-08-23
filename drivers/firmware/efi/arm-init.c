@@ -112,12 +112,13 @@ static int __init uefi_init(void)
 		retval = -EINVAL;
 		goto out;
 	}
+
+	efi.spec_version = efi.systab->hdr.revision;
+
 	if ((efi.systab->hdr.revision >> 16) < 2)
 		pr_warn("Warning: EFI system table version %d.%02d, expected 2.00 or greater\n",
 			efi.systab->hdr.revision >> 16,
 			efi.systab->hdr.revision & 0xffff);
-
-	efi.runtime_version = efi.systab->hdr.revision;
 
 	/* Show what we know for posterity */
 	c16 = early_memremap_ro(efi_to_phys(efi.systab->fw_vendor),
