@@ -180,9 +180,7 @@ static ssize_t fw_platform_size_show(struct kobject *kobj,
 	return sprintf(buf, "%d\n", efi_enabled(EFI_64BIT) ? 64 : 32);
 }
 
-static ssize_t spec_version_show(struct kobject *kobj,
-				 struct kobj_attribute *attr,
-				 char *buf)
+ssize_t efi_spec_version_format(char *buf)
 {
 	u16 major, minor;
 	ssize_t rc;
@@ -242,6 +240,15 @@ static ssize_t spec_version_show(struct kobject *kobj,
 		return str - buf;
 	}
 	return rc;
+}
+
+static ssize_t spec_version_show(struct kobject *kobj,
+				 struct kobj_attribute *attr,
+				 char *buf)
+{
+	char version[] = "65535.255.255";
+
+	return efi_spec_version_format(version);
 }
 
 static struct kobj_attribute efi_attr_fw_vendor = __ATTR_RO(fw_vendor);

@@ -611,6 +611,8 @@ typedef struct {
 
 void efi_native_runtime_setup(void);
 
+ssize_t efi_spec_version_format(char *buf);
+
 /*
  * EFI Configuration Table and GUID definitions
  *

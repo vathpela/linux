@@ -90,7 +90,7 @@ static int __init uefi_init(void)
 	efi_char16_t *c16;
 	void *config_tables;
 	size_t table_size;
-	char vendor[100] = "unknown";
+	char vendor[100] = "unknown", version[] = "65535.255.255";
 	int i, retval;
 
 	efi.systab = early_memremap_ro(efi_system_table,
@@ -115,10 +115,11 @@ static int __init uefi_init(void)
 
 	efi.spec_version = efi.systab->hdr.revision;
 
+	efi_spec_version_format(version);
+
 	if ((efi.systab->hdr.revision >> 16) < 2)
-		pr_warn("Warning: EFI system table version %d.%02d, expected 2.00 or greater\n",
-			efi.systab->hdr.revision >> 16,
-			efi.systab->hdr.revision & 0xffff);
+		pr_warn("Warning: EFI system table version %s, expected 1.00 or greater\n",
+			version);
 
 	/* Show what we know for posterity */
 	c16 = early_memremap_ro(efi_to_phys(efi.systab->fw_vendor),
@@ -130,9 +131,7 @@ static int __init uefi_init(void)
 		early_memunmap(c16, sizeof(vendor) * sizeof(efi_char16_t));
 	}
 
-	pr_info("EFI v%u.%.02u by %s\n",
-		efi.systab->hdr.revision >> 16,
-		efi.systab->hdr.revision & 0xffff, vendor);
+	pr_info("EFI v%s by %s\n", version, vendor);
 
 	table_size = sizeof(efi_config_table_64_t) * efi.systab->nr_tables;
 	config_tables = early_memremap_ro(efi_to_phys(efi.systab->tables),

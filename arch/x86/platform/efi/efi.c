@@ -388,10 +388,14 @@ static int __init efi_systab_init(void *phys)
 
 	efi.spec_version = efi.systab->hdr.revision;
 
-	if ((efi.systab->hdr.revision >> 16) == 0)
-		pr_err("Warning: System table version %d.%02d, expected 1.00 or greater!\n",
-		       efi.systab->hdr.revision >> 16,
-		       efi.systab->hdr.revision & 0xffff);
+	if ((efi.systab->hdr.revision >> 16) == 0) {
+		char version[] = "65535.255.255";
+
+		efi_spec_version_format(version);
+
+		pr_err("Warning: System table version %s, expected 1.00 or greater!\n",
+		       version);
+	}
 
 	return 0;
 }
@@ -480,7 +484,7 @@ static int __init efi_runtime_init(void)
 void __init efi_init(void)
 {
 	efi_char16_t *c16;
-	char vendor[100] = "unknown";
+	char vendor[100] = "unknown", version[] = "65535.255.255";
 	int i = 0;
 	void *tmp;
 
@@ -507,6 +511,7 @@ void __init efi_init(void)
 	/*
 	 * Show what we know for posterity
 	 */
+
 	c16 = tmp = early_memremap(efi.systab->fw_vendor, 2);
 	if (c16) {
 		for (i = 0; i < sizeof(vendor) - 1 && *c16; ++i)
@@ -516,9 +521,9 @@ void __init efi_init(void)
 		pr_err("Could not map the firmware vendor!\n");
 	early_memunmap(tmp, 2);
 
-	pr_info("EFI v%u.%.02u by %s\n",
-		efi.systab->hdr.revision >> 16,
-		efi.systab->hdr.revision & 0xffff, vendor);
+	efi_spec_version_format(version);
+
+	pr_info("EFI v%s by %s\n", version, vendor);
 
 	if (efi_reuse_config(efi.systab->tables, efi.systab->nr_tables))
 		return;

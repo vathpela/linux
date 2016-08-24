@@ -474,7 +474,7 @@ efi_init (void)
 	void *efi_map_start, *efi_map_end;
 	efi_char16_t *c16;
 	u64 efi_desc_size;
-	char *cp, vendor[100] = "unknown";
+	char *cp, vendor[100] = "unknown", version[] = "65535.255.255";
 	int i;
 
 	set_bit(EFI_BOOT, &efi.flags);
@@ -517,11 +517,11 @@ efi_init (void)
 
 	efi.spec_version = efi.systab->hdr.version;
 
+	efi_spec_version_format(version);
+
 	if ((efi.systab->hdr.revision >> 16) == 0)
-		printk(KERN_WARNING "Warning: EFI system table version "
-		       "%d.%02d, expected 1.00 or greater\n",
-		       efi.systab->hdr.revision >> 16,
-		       efi.systab->hdr.revision & 0xffff);
+		printk(KERN_WARNING "Warning: EFI system table version %s, expected 1.00 or greater\n",
+		       version);
 
 	/* Show what we know for posterity */
 	c16 = __va(efi.systab->fw_vendor);
@@ -531,9 +531,7 @@ efi_init (void)
 		vendor[i] = '\0';
 	}
 
-	printk(KERN_INFO "EFI v%u.%.02u by %s:",
-	       efi.systab->hdr.revision >> 16,
-	       efi.systab->hdr.revision & 0xffff, vendor);
+	printk(KERN_INFO "EFI v%s by %s\n", version, vendor);
 
 	palo_phys      = EFI_INVALID_TABLE_ADDR;
 
