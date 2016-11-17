@@ -73,6 +73,9 @@ Protocol 2.14:	(Kernel 4.20) Added acpi_rsdp_addr holding the physical
 		the kernel and bootloader-version the protocol version
 		supported by the bootloader.
 
+Protocol 2.15:	(Kernel 4.xx) Renamed code32_start to kernel_start to better
+		reflect its usage, added ext_kernel_start.
+
 **** MEMORY LAYOUT
 
 The traditional memory map for the kernel loader, used for Image or
@@ -170,6 +173,10 @@ The header looks like:
 Offset	Proto	Name		Meaning
 /Size
 
+00C0/4	2.12+	ext_ramdisk_image high order 32-bits of ramdisk_image
+00C4/4	2.12+	ext_ramdisk_size high order 32-bits of ramdisk_size
+00C8/4	2.12+	ext_cmd_line_ptr high order 32-bits of cmd_line_ptr
+00CC/4	2.14+	ext_kernel_start high order 32-bits of kernel_start
 01F1/1	ALL(1	setup_sects	The size of the setup in sectors
 01F2/2	ALL	root_flags	If set, the root is mounted readonly
 01F4/4	2.04+(2	syssize		The size of the 32-bit code in 16-byte paras
@@ -186,7 +193,7 @@ Offset	Proto	Name		Meaning
 0210/1	2.00+	type_of_loader	Boot loader identifier
 0211/1	2.00+	loadflags	Boot protocol option flags
 0212/2	2.00+	setup_move_size	Move to high memory size (used with hooks)
-0214/4	2.00+	code32_start	Boot loader hook (see below)
+0214/4	2.00+	kernel_start	Boot loader hook (see below)
 0218/4	2.00+	ramdisk_image	initrd load address (set by boot loader)
 021C/4	2.00+	ramdisk_size	initrd size (set by boot loader)
 0220/4	2.00+	bootsect_kludge	DO NOT USE - for bootsect.S use only
@@ -247,6 +254,50 @@ nonstandard address should fill in the fields marked (reloc); other
 boot loaders can ignore those fields.
 
 The byte order of all fields is littleendian (this is x86, after all.)
+
+Field name:	ext_ramdisk_image
+Type:		write (optional)
+Offset/size:	0x0c0/4
+Protocol:	2.12+
+
+  The high-order 4 bytes of a 64-bit linear address of the initial ramdisk
+  or ramfs.  Leave at zero if there is no initial ramdisk/ramfs.
+
+  Leave at zero for kernels without XLF_CAN_BE_LOADED_ABOVE_4G set in
+  xloadflags.
+
+Field name:	ext_ramdisk_size
+Type:		write (optional)
+Offset/size:	0x0c4/4
+Protocol:	2.12+
+
+  The high-order 4 bytes of a 64-bit size of the initial ramdisk
+  or ramfs.  Leave at zero if there is no initial ramdisk/ramfs.
+
+  Leave at zero for kernels without XLF_CAN_BE_LOADED_ABOVE_4G set in
+  xloadflags.
+
+Field name:	ext_cmd_line_ptr
+Type:		write (optional)
+Offset/size:	0x0c8/4
+Protocol:	2.12+
+
+  The high-order 4 bytes of a 64-bit linear address of the kernel command
+  line.
+
+  Leave at zero for kernels without XLF_CAN_BE_LOADED_ABOVE_4G set in
+  xloadflags.
+
+Field name:	ext_kernel_start
+Type:		write (optional, reloc)
+Offset/size:	0x0cc/4
+Protocol:	2.14+
+
+  The high-order 4 bytes of a 64-bit linear address of the kernel load
+  address.
+
+  Leave at zero for kernels without XLF_CAN_BE_LOADED_ABOVE_4G set in
+  xloadflags.
 
 Field name:	setup_sects
 Type:		read
@@ -466,7 +517,7 @@ Protocol:	2.00-2.01
   This field is can be ignored when the protocol is 2.02 or higher, or
   if the real-mode code is loaded at 0x90000.
 
-Field name:	code32_start
+Field name:	kernel_start
 Type:		modify (optional, reloc)
 Offset/size:	0x214/4
 Protocol:	2.00+
@@ -593,7 +644,7 @@ Protocol:	2.05+
 
   If this field is nonzero, the protected-mode part of the kernel can
   be loaded at any address that satisfies the kernel_alignment field.
-  After loading, the boot loader must set the code32_start field to
+  After loading, the boot loader must set the kernel_start field to
   point to the loaded code, or to a boot loader hook.
 
 Field name:	min_alignment
@@ -1046,7 +1097,7 @@ IMPORTANT: All the hooks are required to preserve %esp, %ebp, %esi and
 	entering protected mode.  The default routine disables NMI, so
 	your routine should probably do so, too.
 
-  code32_start:
+  kernel_start:
 	A 32-bit flat-mode routine *jumped* to immediately after the
 	transition to protected mode, but before the kernel is
 	uncompressed.  No segments, except CS, are guaranteed to be
@@ -1150,11 +1201,19 @@ firmware, 'table' is the EFI system table - these are the first two
 arguments of the "handoff state" as described in section 2.3 of the
 UEFI specification. 'bp' is the boot loader-allocated boot params.
 
-The boot loader *must* fill out the following fields in bp,
+The boot loader *must* fill out the following fields in bp:
 
-    o hdr.code32_start
+    o hdr.kernel_start
     o hdr.cmd_line_ptr
     o hdr.ramdisk_image (if applicable)
     o hdr.ramdisk_size  (if applicable)
+
+On 64-bit systems using the 64-bit EFI boot stub entry point (i.e. not
+pe_entry), the bootloader *must* also fill out the following fields in bp:
+
+    o ext_kernel_start (if applicable)
+    o ext_cmd_line_ptr (if applicable)
+    o ext_ramdisk_image (if applicable)
+    o ext_ramdisk_size (if applicable)
 
 All other fields should be zero.

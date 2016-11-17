@@ -67,7 +67,7 @@ struct setup_header {
 	__u8	type_of_loader;
 	__u8	loadflags;
 	__u16	setup_move_size;
-	__u32	code32_start;
+	__u32	kernel_start;
 	__u32	ramdisk_image;
 	__u32	ramdisk_size;
 	__u32	bootsect_kludge;
@@ -167,7 +167,8 @@ struct boot_params {
 	__u32 ext_ramdisk_image;			/* 0x0c0 */
 	__u32 ext_ramdisk_size;				/* 0x0c4 */
 	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
-	__u8  _pad4[116];				/* 0x0cc */
+	__u32 ext_kernel_start				/* 0x0cc */
+	__u8  _pad4[112];				/* 0x0d0 */
 	struct edid_info edid_info;			/* 0x140 */
 	struct efi_info efi_info;			/* 0x1c0 */
 	__u32 alt_mem_k;				/* 0x1e0 */

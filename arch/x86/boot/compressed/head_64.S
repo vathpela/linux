@@ -465,7 +465,9 @@ ENTRY(efi_pe_entry)
 	je	fail
 	mov	%rax, %rsi
 	leaq	startup_32(%rip), %rax
-	movl	%eax, BP_code32_start(%rsi)
+	movl	%eax, BP_ext_kernel_start(%rsi)
+	shl	$32, %rax
+	movl	%eax, BP_kernel_start(%rsi)
 	jmp	2f		/* Skip the relocation */
 
 handover_entry:
@@ -489,7 +491,9 @@ fail:
 	hlt
 	jmp	fail
 2:
-	movl	BP_code32_start(%esi), %eax
+	movl	BP_ext_kernel_start(%esi), %eax
+	shr	$32, %rax
+	movl	BP_kernel_start(%esi), %eax
 	leaq	startup_64(%rax), %rax
 	jmp	*%rax
 ENDPROC(efi_pe_entry)

@@ -15,6 +15,7 @@
 #include <asm/e820/types.h>
 #include <asm/setup.h>
 #include <asm/desc.h>
+#include <asm/bootparam_utils.h>
 
 #include "../string.h"
 #include "eboot.h"
@@ -377,7 +378,7 @@ void setup_graphics(struct boot_params *boot_params)
  * need to create one ourselves (usually the bootloader would create
  * one for us).
  *
- * The caller is responsible for filling out ->code32_start in the
+ * The caller is responsible for filling out ->kernel_start in the
  * returned boot_params.
  */
 struct boot_params *make_boot_params(struct efi_config *c)
@@ -481,6 +482,9 @@ struct boot_params *make_boot_params(struct efi_config *c)
 	hdr->ramdisk_size  = ramdisk_size & 0xffffffff;
 	boot_params->ext_ramdisk_image = (u64)ramdisk_addr >> 32;
 	boot_params->ext_ramdisk_size  = (u64)ramdisk_size >> 32;
+
+	if (hdr->version < 0x020D)
+		boot_params->ext_kernel_start = 0;
 
 	return boot_params;
 
@@ -741,6 +745,15 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 	return EFI_SUCCESS;
 }
 
+static u64 __init get_kernel_start(void)
+{
+	u64 kernel_start = boot_params.hdr.kernel_start;
+
+	kernel_start |= (u64)boot_params.ext_kernel_start << 32;
+
+	return kernel_start;
+}
+
 /*
  * On success we return a pointer to a boot_params structure, and NULL
  * on failure.
@@ -756,6 +769,7 @@ efi_main(struct efi_config *c, struct boot_params *boot_params)
 	void *handle;
 	efi_system_table_t *_table;
 	unsigned long cmdline_paddr;
+	unsigned long bzimage_addr;
 
 	efi_early = c;
 
@@ -818,8 +832,8 @@ efi_main(struct efi_config *c, struct boot_params *boot_params)
 	 * If the kernel isn't already loaded at the preferred load
 	 * address, relocate it.
 	 */
-	if (hdr->pref_address != hdr->code32_start) {
-		unsigned long bzimage_addr = hdr->code32_start;
+	bzimage_addr = get_kernel_start();
+	if (hdr->pref_address != bzimage_addr) {
 		status = efi_relocate_kernel(sys_table, &bzimage_addr,
 					     hdr->init_size, hdr->init_size,
 					     hdr->pref_address,
@@ -829,8 +843,8 @@ efi_main(struct efi_config *c, struct boot_params *boot_params)
 			goto fail;
 		}
 
-		hdr->pref_address = hdr->code32_start;
-		hdr->code32_start = bzimage_addr;
+		hdr->ext_kernel_start = bzimage_addr >> 32;
+		hdr->kernel_start = bzimage_addr & 0xfffffffful;
 	}
 
 	status = exit_boot(boot_params, handle);

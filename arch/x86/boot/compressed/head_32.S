@@ -169,7 +169,8 @@ ENTRY(efi_pe_entry)
 	call	make_boot_params
 	cmpl	$0, %eax
 	je	fail
-	movl	%esi, BP_code32_start(%eax)
+	movl	%esi, BP_kernel_start(%eax)
+	movl	$0, BP_ext_kernel_start(%eax)
 	popl	%ecx
 	pushl	%eax
 	pushl	%ecx
@@ -202,7 +203,7 @@ fail:
 	hlt
 	jmp	fail
 2:
-	movl	BP_code32_start(%esi), %eax
+	movl	BP_kernel_start(%esi), %eax
 	leal	startup_32(%eax), %eax
 	jmp	*%eax
 ENDPROC(efi32_stub_entry)

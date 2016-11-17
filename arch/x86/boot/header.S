@@ -327,7 +327,7 @@ setup_move_size: .word  0x8000		# size to move, when setup is not
 					# loader knows how much data behind
 					# us also needs to be loaded.
 
-code32_start:				# here loaders can put a different
+kernel_start:				# here loaders can put a different
 					# start address for 32-bit code.
 		.long	0x100000	# 0x100000 = default for big kernel
 
