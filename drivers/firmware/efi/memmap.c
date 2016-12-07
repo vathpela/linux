@@ -286,6 +286,13 @@ void __init efi_memmap_insert(struct efi_memory_map *old_memmap, void *buf,
 		/* copy original EFI memory descriptor */
 		memcpy(new, old, old_memmap->desc_size);
 		md = new;
+		if (md->num_pages == 0 ||
+		    md->num_pages >= (((u64)-1LL) >> EFI_PAGE_SHIFT)) {
+			pr_warn("%s: Skipping absurd memory map entry for 0x%llx pages at 0x%016llx.\n",
+				__func__, md->num_pages, md->phys_addr);
+			continue;
+		}
+
 		start = md->phys_addr;
 		end = md->phys_addr + (md->num_pages << EFI_PAGE_SHIFT) - 1;
 
