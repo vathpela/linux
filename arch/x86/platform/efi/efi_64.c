@@ -428,11 +428,24 @@ static void __init __map_region(efi_memory_desc_t *md, u64 va)
 
 void __init efi_map_region(efi_memory_desc_t *md)
 {
-	unsigned long size = md->num_pages << PAGE_SHIFT;
+	u64 size = md->num_pages << PAGE_SHIFT;
 	u64 pa = md->phys_addr;
 
-	if (efi_enabled(EFI_OLD_MEMMAP))
-		return old_map_region(md);
+	/*
+	 * hah hah the system firmware is having a good one on us
+	 */
+	if (md->num_pages == 0 ||
+	    md->num_pages >= (((u64)-1LL) >> EFI_PAGE_SHIFT)) {
+		pr_err("memmap from %p to %p is unreasonable.  Not mapping it.\n",
+		       (void *)pa, (void *)(pa+size));
+		WARN_ON(1);
+		return;
+	}
+
+	if (efi_enabled(EFI_OLD_MEMMAP)) {
+		old_map_region(md);
+		return;
+	}
 
 	/*
 	 * Make sure the 1:1 mappings are present as a catch-all for b0rked

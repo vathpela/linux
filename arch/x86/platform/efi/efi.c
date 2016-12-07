@@ -769,6 +769,10 @@ static bool should_map_region(efi_memory_desc_t *md)
 	if (IS_ENABLED(CONFIG_X86_32))
 		return false;
 
+	if (md->num_pages == 0 ||
+	    md->num_pages >= (((u64)-1LL) >> EFI_PAGE_SHIFT))
+		return false;
+
 	/*
 	 * Map all of RAM so that we can access arguments in the 1:1
 	 * mapping when making EFI runtime calls.
