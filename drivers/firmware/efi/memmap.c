@@ -261,6 +261,7 @@ void __init efi_memmap_insert(struct efi_memory_map *old_memmap, void *buf,
 	efi_memory_desc_t *md;
 	u64 start, end;
 	void *old, *new;
+	bool did_split=false;
 
 	/* modifying range */
 	m_start = mem->range.start;
@@ -293,6 +294,15 @@ void __init efi_memmap_insert(struct efi_memory_map *old_memmap, void *buf,
 
 		if (m_start <= start &&
 		    (start < m_end && m_end < end)) {
+			if (did_split) {
+				pr_warn_once("%s: memory map for 0x%llx pages at 0x%016llx also covers address 0x%016llx.  Not splitting.\n",
+					     __func__,
+					     md->num_pages, md->phys_addr,
+					     m_start);
+				continue;
+			}
+
+			did_split = true;
 			/* first part */
 			md->attribute |= m_attr;
 			md->num_pages = (m_end - md->phys_addr + 1) >>
@@ -307,9 +317,18 @@ void __init efi_memmap_insert(struct efi_memory_map *old_memmap, void *buf,
 		}
 
 		if ((start < m_start && m_start < end) && m_end < end) {
+			if (did_split) {
+				pr_warn_once("%s: memory map for 0x%llx pages at 0x%016llx also covers address 0x%016llx.  Not splitting.\n",
+					     __func__,
+					     md->num_pages, md->phys_addr,
+					     m_start);
+				continue;
+			}
+			did_split = true;
 			/* first part */
 			md->num_pages = (m_start - md->phys_addr) >>
 				EFI_PAGE_SHIFT;
+
 			/* middle part */
 			new += old_memmap->desc_size;
 			memcpy(new, old, old_memmap->desc_size);
@@ -326,9 +345,17 @@ void __init efi_memmap_insert(struct efi_memory_map *old_memmap, void *buf,
 			md->num_pages = (end - m_end) >>
 				EFI_PAGE_SHIFT;
 		}
-
+// else
 		if ((start < m_start && m_start < end) &&
 		    (end <= m_end)) {
+			if (did_split) {
+				pr_warn_once("%s: memory map for 0x%llx pages at 0x%016llx also covers address 0x%016llx.  Not splitting.\n",
+					     __func__,
+					     md->num_pages, md->phys_addr,
+					     m_start);
+				continue;
+			}
+			did_split = true;
 			/* first part */
 			md->num_pages = (m_start - md->phys_addr) >>
 				EFI_PAGE_SHIFT;
