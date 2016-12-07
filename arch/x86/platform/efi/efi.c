@@ -282,11 +282,27 @@ void __init efi_print_memmap(void)
 
 	for_each_efi_memory_desc(md) {
 		char buf[64];
+		bool valid = true;
+		u64 size = (md->num_pages << EFI_PAGE_SHIFT) - 1;
+
+		if (md->num_pages == 0) {
+			size = 0;
+			valid = false;
+		}
+
+		if (md->num_pages >= (((u64)-1LL) >> EFI_PAGE_SHIFT)) {
+			size = (u64)-1LL;
+			valid = false;
+		}
+
+		if (!valid)
+			pr_info(FW_BUG "Invalid EFI memory map entry for 0x%llx pages at 0x%016llx\n",
+				md->num_pages, md->phys_addr);
 
 		pr_info("mem%02u: %s range=[0x%016llx-0x%016llx] (%lluMB)\n",
 			i++, efi_md_typeattr_format(buf, sizeof(buf), md),
 			md->phys_addr,
-			md->phys_addr + (md->num_pages << EFI_PAGE_SHIFT) - 1,
+			md->phys_addr + size,
 			(md->num_pages >> (20 - EFI_PAGE_SHIFT)));
 	}
 }
