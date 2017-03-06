@@ -5,6 +5,12 @@ Description:	It shows the physical address of firmware vendor field in the
 		EFI system table.
 Users:		Kexec
 
+What:		/sys/firmware/efi/fw_vendor_str
+Date:		March 2017
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	This file shows a utf-8 representation of the firmware
+		vendor name.
+
 What:		/sys/firmware/efi/runtime
 Date:		December 2013
 Contact:	Dave Young <dyoung@redhat.com>

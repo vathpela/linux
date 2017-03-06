@@ -202,11 +202,31 @@ static ssize_t fw_platform_size_show(struct kobject *kobj,
 	return sprintf(buf, "%d\n", efi_enabled(EFI_64BIT) ? 64 : 32);
 }
 
+static ssize_t fw_vendor_str_show(struct kobject *kobj,
+				  struct kobj_attribute *attr, char *buf)
+{
+	efi_char16_t *c16;
+	unsigned long len = 0;
+
+	/* Show what we know for posterity */
+	c16 = memremap(efi_to_phys(efi.systab->fw_vendor),
+		       PAGE_SIZE * sizeof(efi_char16_t), MEMREMAP_WB);
+	if (c16 != NULL) {
+		len = ucs2_as_utf8((u8 *)buf, c16, PAGE_SIZE);
+		memunmap(c16);
+	}
+
+	buf[len] = '\0';
+
+	return len;
+}
+
 static struct kobj_attribute efi_attr_fw_vendor = __ATTR_RO(fw_vendor);
 static struct kobj_attribute efi_attr_runtime = __ATTR_RO(runtime);
 static struct kobj_attribute efi_attr_config_table = __ATTR_RO(config_table);
 static struct kobj_attribute efi_attr_fw_platform_size =
 	__ATTR_RO(fw_platform_size);
+static struct kobj_attribute efi_attr_fw_vendor_str = __ATTR_RO(fw_vendor_str);
 
 static struct attribute *efi_subsys_attrs[] = {
 	&efi_attr_systab.attr,
@@ -214,6 +234,7 @@ static struct attribute *efi_subsys_attrs[] = {
 	&efi_attr_runtime.attr,
 	&efi_attr_config_table.attr,
 	&efi_attr_fw_platform_size.attr,
+	&efi_attr_fw_vendor_str.attr,
 	NULL,
 };
 
