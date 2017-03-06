@@ -1589,6 +1589,8 @@ efi_enable_reset_attack_mitigation(efi_system_table_t *sys_table_arg) { }
 
 void efi_retrieve_tpm2_eventlog(efi_system_table_t *sys_table);
 
+extern phys_addr_t efi_to_phys(unsigned long addr);
+
 /*
  * Arch code can implement the following three template macros, avoiding
  * reptition for the void/non-void return cases of {__,}efi_call_virt():

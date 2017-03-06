@@ -33,28 +33,6 @@ static int __init is_memory(efi_memory_desc_t *md)
 	return 0;
 }
 
-/*
- * Translate a EFI virtual address into a physical address: this is necessary,
- * as some data members of the EFI system table are virtually remapped after
- * SetVirtualAddressMap() has been called.
- */
-static phys_addr_t efi_to_phys(unsigned long addr)
-{
-	efi_memory_desc_t *md;
-
-	for_each_efi_memory_desc(md) {
-		if (!(md->attribute & EFI_MEMORY_RUNTIME))
-			continue;
-		if (md->virt_addr == 0)
-			/* no virtual mapping has been installed by the stub */
-			break;
-		if (md->virt_addr <= addr &&
-		    (addr - md->virt_addr) < (md->num_pages << EFI_PAGE_SHIFT))
-			return md->phys_addr + addr - md->virt_addr;
-	}
-	return addr;
-}
-
 static __initdata unsigned long screen_info_table = EFI_INVALID_TABLE_ADDR;
 
 static __initdata efi_config_table_type_t arch_tables[] = {
