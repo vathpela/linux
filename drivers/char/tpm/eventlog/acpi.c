@@ -46,8 +46,17 @@ struct acpi_tcpa {
 	};
 };
 
+struct acpi_tpm2 {
+	struct acpi_table_header hdr;
+	u16 platform_class;
+	u16 reserved;
+	u64 ctl_addr;
+	u32 start;
+	u8 platform_params[];
+} __packed;
+
 /* read binary bios log */
-int tpm_read_log_acpi(struct tpm_chip *chip)
+int tpm_read_log_acpi_tpm1(struct tpm_chip *chip)
 {
 	struct acpi_tcpa *buff;
 	acpi_status status;
@@ -55,8 +64,67 @@ int tpm_read_log_acpi(struct tpm_chip *chip)
 	u64 len, start;
 	struct tpm_bios_log *log;
 
-	if (chip->flags & TPM_CHIP_FLAG_TPM2)
+	log = &chip->log;
+
+	/* Unfortuntely ACPI does not associate the event log with a specific
+	 * TPM, like PPI. Thus all ACPI TPMs will read the same log.
+	 */
+	if (!chip->acpi_dev_handle)
 		return -ENODEV;
+
+	/* Find TCPA entry in RSDT (ACPI_LOGICAL_ADDRESSING) */
+	status = acpi_get_table(ACPI_SIG_TCPA, 1,
+				(struct acpi_table_header **)&buff);
+
+	if (ACPI_FAILURE(status))
+		return -ENODEV;
+
+	switch(buff->platform_class) {
+	case BIOS_SERVER:
+		len = buff->server.log_max_len;
+		start = buff->server.log_start_addr;
+		break;
+	case BIOS_CLIENT:
+	default:
+		len = buff->client.log_max_len;
+		start = buff->client.log_start_addr;
+		break;
+	}
+	if (!len) {
+		dev_warn(&chip->dev, "%s: TCPA log area empty\n", __func__);
+		return -EIO;
+	}
+
+	/* malloc EventLog space */
+	log->bios_event_log = kmalloc(len, GFP_KERNEL);
+	if (!log->bios_event_log)
+		return -ENOMEM;
+
+	log->bios_event_log_end = log->bios_event_log + len;
+
+	virt = acpi_os_map_iomem(start, len);
+	if (!virt)
+		goto err;
+
+	memcpy_fromio(log->bios_event_log, virt, len);
+
+	acpi_os_unmap_iomem(virt, len);
+	return 0;
+
+err:
+	kfree(log->bios_event_log);
+	log->bios_event_log = NULL;
+	return -EIO;
+}
+
+int tpm_read_log_efi(struct tpm_chip *chip)
+{
+#if 0
+	struct acpi_tpm2 *buff;
+	acpi_status status;
+	void __iomem *virt;
+	u64 len, start;
+	struct tpm_bios_log *log;
 
 	log = &chip->log;
 
@@ -109,5 +177,7 @@ err:
 	kfree(log->bios_event_log);
 	log->bios_event_log = NULL;
 	return -EIO;
-
+#else
+	return -ENOTTY;
+#endif
 }

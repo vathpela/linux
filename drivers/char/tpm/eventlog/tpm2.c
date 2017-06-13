@@ -88,12 +88,12 @@ static int calc_tpm2_event_size(struct tcg_pcr_event2 *event,
 	return size;
 }
 
-static void *tpm2_bios_measurements_start(struct seq_file *m, loff_t *pos)
+static void *tpm2_efi_measurements_start(struct seq_file *m, loff_t *pos)
 {
 	struct tpm_chip *chip = m->private;
-	struct tpm_bios_log *log = &chip->log;
-	void *addr = log->bios_event_log;
-	void *limit = log->bios_event_log_end;
+	struct tpm_efi_log *log = &chip->log;
+	void *addr = log->efi_event_log;
+	void *limit = log->efi_event_log_end;
 	struct tcg_pcr_event *event_header;
 	struct tcg_pcr_event2 *event;
 	size_t size;
@@ -132,18 +132,18 @@ static void *tpm2_bios_measurements_start(struct seq_file *m, loff_t *pos)
 	return addr;
 }
 
-static void *tpm2_bios_measurements_next(struct seq_file *m, void *v,
+static void *tpm2_efi_measurements_next(struct seq_file *m, void *v,
 					 loff_t *pos)
 {
 	struct tcg_pcr_event *event_header;
 	struct tcg_pcr_event2 *event;
 	struct tpm_chip *chip = m->private;
-	struct tpm_bios_log *log = &chip->log;
-	void *limit = log->bios_event_log_end;
+	struct tpm_efi_log *log = &chip->log;
+	void *limit = log->efi_event_log_end;
 	size_t event_size;
 	void *marker;
 
-	event_header = log->bios_event_log;
+	event_header = log->efi_event_log;
 
 	if (v == SEQ_START_TOKEN) {
 		event_size = sizeof(struct tcg_pcr_event) -
@@ -171,15 +171,15 @@ static void *tpm2_bios_measurements_next(struct seq_file *m, void *v,
 	return v;
 }
 
-static void tpm2_bios_measurements_stop(struct seq_file *m, void *v)
+static void tpm2_efi_measurements_stop(struct seq_file *m, void *v)
 {
 }
 
-static int tpm2_binary_bios_measurements_show(struct seq_file *m, void *v)
+static int tpm2_binary_efi_measurements_show(struct seq_file *m, void *v)
 {
 	struct tpm_chip *chip = m->private;
-	struct tpm_bios_log *log = &chip->log;
-	struct tcg_pcr_event *event_header = log->bios_event_log;
+	struct tpm_efi_log *log = &chip->log;
+	struct tcg_pcr_event *event_header = log->efi_event_log;
 	struct tcg_pcr_event2 *event = v;
 	void *temp_ptr;
 	size_t size;
@@ -203,8 +203,8 @@ static int tpm2_binary_bios_measurements_show(struct seq_file *m, void *v)
 }
 
 const struct seq_operations tpm2_binary_b_measurements_seqops = {
-	.start = tpm2_bios_measurements_start,
-	.next = tpm2_bios_measurements_next,
-	.stop = tpm2_bios_measurements_stop,
-	.show = tpm2_binary_bios_measurements_show,
+	.start = tpm2_efi_measurements_start,
+	.next = tpm2_efi_measurements_next,
+	.stop = tpm2_efi_measurements_stop,
+	.show = tpm2_binary_efi_measurements_show,
 };

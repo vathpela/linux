@@ -8,6 +8,7 @@ menuconfig TCG_TPM
 	imply SECURITYFS
 	select CRYPTO
 	select CRYPTO_HASH_INFO
+	select TCG_TPM2_EFI if EFI
 	---help---
 	  If you have a TPM security chip in your system, which
 	  implements the Trusted Computing Group's specification,
@@ -23,6 +24,14 @@ menuconfig TCG_TPM
 	  and CONFIG_PNPACPI.
 	  2) Without ACPI enabled, the BIOS event log won't be accessible,
 	  which is required to validate the PCR 0-7 values.
+
+config TCG_TPM2_EFI
+	bool "TPM2 Event Log "
+	depends on EFI && TCG_TPM
+	default n
+	help
+	  Say Y here to enable using the EFI system firmware to retrieve the
+	  TPM 2.0 Event Log during boot.
 
 if TCG_TPM
 
