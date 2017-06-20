@@ -90,6 +90,7 @@ static int calc_tpm2_event_size(struct tcg_pcr_event2 *event,
 
 static void *tpm2_efi_measurements_start(struct seq_file *m, loff_t *pos)
 {
+#if 0
 	struct tpm_chip *chip = m->private;
 	struct tpm_efi_log *log = &chip->log;
 	void *addr = log->efi_event_log;
@@ -130,11 +131,15 @@ static void *tpm2_efi_measurements_start(struct seq_file *m, loff_t *pos)
 	}
 
 	return addr;
+#else
+	return NULL;
+#endif
 }
 
 static void *tpm2_efi_measurements_next(struct seq_file *m, void *v,
 					 loff_t *pos)
 {
+#if 0
 	struct tcg_pcr_event *event_header;
 	struct tcg_pcr_event2 *event;
 	struct tpm_chip *chip = m->private;
@@ -169,6 +174,9 @@ static void *tpm2_efi_measurements_next(struct seq_file *m, void *v,
 
 	(*pos)++;
 	return v;
+#else
+	return NULL;
+#endif
 }
 
 static void tpm2_efi_measurements_stop(struct seq_file *m, void *v)
@@ -177,6 +185,7 @@ static void tpm2_efi_measurements_stop(struct seq_file *m, void *v)
 
 static int tpm2_binary_efi_measurements_show(struct seq_file *m, void *v)
 {
+#if 0
 	struct tpm_chip *chip = m->private;
 	struct tpm_efi_log *log = &chip->log;
 	struct tcg_pcr_event *event_header = log->efi_event_log;
@@ -199,6 +208,7 @@ static int tpm2_binary_efi_measurements_show(struct seq_file *m, void *v)
 			seq_write(m, temp_ptr, size);
 	}
 
+#endif
 	return 0;
 }
 

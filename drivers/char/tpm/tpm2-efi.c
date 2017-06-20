@@ -9,8 +9,9 @@
 #include <linux/efi.h>
 #include <asm/efi.h>
 #include <asm/setup.h>
-#include <linux/tpm2_eventlog.h>
 
+#include "tpm.h"
+#include "tpm_eventlog.h"
 #include "tpm2-efi.h"
 
 static phys_addr_t tcg2_event_log;
@@ -50,24 +51,59 @@ static ssize_t
 tcg2_get_entry_size(efi_physical_addr_t event_log_entry_pa)
 {
 	struct tcg_pcr_event2 *event;
+	struct tcg_event_field *event_field;
 	size_t event2_size, aligned;
-	u32 event_size;
+	u32 tmp_size = 0;
+	ssize_t ret = -EINVAL;
 
-	event2_size = offsetof(struct tcg_pcr_event2, event);
-	aligned = PAGE_ALIGN(event2_size);
+	event2_size = offsetof(struct tcg_pcr_event2, digests);
+
+	aligned = PAGE_ALIGN(event2_size
+			     + sizeof (struct tpm2_digest) * 10
+			     + sizeof (struct tcg_event_field));
 
 	event = early_memremap(event_log_entry_pa, aligned);
 	if (!event)
 		return -ENOMEM;
 
-	event_size = event->event.event_size;
+	if (event->count == 0) {
+		ret = 0;
+		goto err_unmap;
+	}
+
+	if (SIZE_MAX / event->count <= sizeof(struct tpm2_digest))
+		goto err_unmap;
+
+	tmp_size = event->count * sizeof(struct tpm2_digest);
+	if (SIZE_MAX - event2_size <= tmp_size)
+		goto err_unmap;
+
+	event2_size += tmp_size;
+	tmp_size = sizeof (event_field->event_size);
+	if (SIZE_MAX - event2_size <= tmp_size)
+		goto err_unmap;
+
+	if (event->count > 10) {
+		early_memunmap(event, aligned);
+		aligned = PAGE_ALIGN(event2_size + tmp_size);
+		event = early_memremap(event_log_entry_pa, aligned);
+		if (!event)
+			return -ENOMEM;
+	}
+
+	event_field = (struct tcg_event_field *)((u8 *)event + event2_size);
+	event2_size += tmp_size;
+	if (SIZE_MAX / event_field->event_size >= SIZE_MAX - event2_size)
+		goto err_unmap;
+
+	event2_size += event_field->event_size;
+	if (SIZE_MAX >> 1 < event2_size)
+		goto err_unmap;
+
+	ret = event2_size;
+err_unmap:
 	early_memunmap(event, aligned);
-
-	if (SIZE_MAX - event2_size < event_size)
-		return -ENOMEM;
-
-	event2_size += event_size;
-	return event2_size;
+	return ret;
 }
 
 static int __init
@@ -178,6 +214,30 @@ unmap:
 	return ret;
 }
 
+static efi_status_t __init
+tpm2_get_caps(efi_tcg2_protocol_t *tcg2,
+	      efi_tcg2_boot_service_capability_t *caps,
+	      bool *old_caps)
+{
+	efi_status_t status;
+
+	memset(caps, '\0', sizeof (*caps));
+	caps->size = (u8)sizeof(*caps);
+
+	status = __efi_call_early(tcg2->get_capability, tcg2, caps);
+	if (status != EFI_SUCCESS) {
+		pr_err("EFI TPM2->GetCapability failed\n");
+		return status;
+	}
+
+	if (caps->structure_version.major == 1 &&
+	    caps->structure_version.minor == 0)
+		*old_caps = true;
+
+	return EFI_SUCCESS;
+}
+
+
 efi_status_t __init
 efi_setup_tpm(efi_system_table_t *sys_table_arg)
 {
@@ -188,6 +248,7 @@ efi_setup_tpm(efi_system_table_t *sys_table_arg)
 	efi_physical_addr_t event_log_last_entry;
 	efi_bool_t event_log_truncated = 0;
 	size_t last_entry_size;
+	bool old_caps = false;
 	int rc;
 
 	status = efi_call_early(locate_protocol, &tcg2_proto, NULL,
@@ -197,12 +258,9 @@ efi_setup_tpm(efi_system_table_t *sys_table_arg)
 		return status;
 	}
 
-	memset(&bs_cap, '\0', sizeof (bs_cap));
-	status = __efi_call_early(tcg2->get_capability, tcg2, &bs_cap);
-	if (status != EFI_SUCCESS) {
-		pr_err("EFI TPM2->GetCapability failed\n");
-		return status;
-	}
+	status = tpm2_get_caps(tcg2, &bs_cap, &old_caps);
+
+
 
 	status = __efi_call_early(tcg2->get_event_log, tcg2,
 				  EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,

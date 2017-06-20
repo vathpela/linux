@@ -5,8 +5,8 @@
  * Distributed under terms of the GPLv3 license.
  */
 
-#ifndef TPM2_EFI_H
-#define TPM2_EFI_H
+#ifndef __TPM2_EFI_H__
+#define __TPM2_EFI_H__
 
 typedef u32 efi_tcg2_event_log_bitmap_t;
 typedef u32 efi_tcg2_event_algorithm_bitmap_t;
@@ -28,7 +28,20 @@ struct efi_tcg2_protocol;
 /*
  * This is not packed, as per the spec.
  */
-typedef struct {
+typedef struct tree_boot_service_capability {
+	u8 size;
+	efi_tcg2_version_t structure_version;
+	efi_tcg2_version_t protocol_version;
+	u32 hash_algorithm_bitmap;
+	efi_tcg2_event_log_bitmap_t supported_event_logs;
+	efi_bool_t tpm_present_flag;
+	u16 max_command_size;
+	u16 max_response_size;
+	u32 manufacturer_id;
+	u32 number_of_pcr_banks;
+} tree_boot_service_capability_t;
+
+typedef struct efi_tcg2_boot_service_capability {
 	u8 size;
 	efi_tcg2_version_t structure_version;
 	efi_tcg2_version_t protocol_version;
@@ -136,7 +149,4 @@ typedef struct {
 #define TCG_EFI_SPEC_ID_UINTN_32BITS	0x01
 #define TCG_EFI_SPEC_ID_UINTN_64BITS	0x02
 
-
-
-#endif /* !TPM2_EFI_H */
-// vim:fenc=utf-8:tw=75
+#endif /* !__TPM2_EFI_H__ */
