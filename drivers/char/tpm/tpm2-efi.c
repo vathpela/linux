@@ -19,9 +19,8 @@ static phys_addr_t tcg2_event_log_first_entry;
 static phys_addr_t tcg2_event_log_last_entry;
 static size_t tcg2_event_log_size;
 static bool tcg2_event_log_truncated;
-
-efi_tcg2_boot_service_capability_t *tpm2_boot_service_capability = NULL;
-static efi_tcg2_boot_service_capability_t bs_cap;
+static efi_tcg2_boot_service_capability_t bs_caps;
+static bool old_caps;
 
 static bool have_log = false;
 
@@ -215,31 +214,55 @@ unmap:
 }
 
 static efi_status_t __init
-tpm2_get_caps(efi_tcg2_protocol_t *tcg2,
-	      efi_tcg2_boot_service_capability_t *caps,
-	      bool *old_caps)
+tpm2_get_caps(efi_tcg2_protocol_t *tcg2)
 {
 	efi_status_t status;
 
-	memset(caps, '\0', sizeof (*caps));
-	caps->size = (u8)sizeof(*caps);
+	memset(&bs_caps, '\0', sizeof (bs_caps));
+	bs_caps.size = (u8)sizeof(bs_caps);
 
-	status = __efi_call_early(tcg2->get_capability, tcg2, caps);
+	status = __efi_call_early(tcg2->get_capability, tcg2, &bs_caps);
 	if (status != EFI_SUCCESS) {
 		pr_err("EFI TPM2->GetCapability failed\n");
 		return status;
 	}
 
-	if (caps->structure_version.major == 1 &&
-	    caps->structure_version.minor == 0)
-		*old_caps = true;
+	if (bs_caps.structure_version.major == 1 &&
+	    bs_caps.structure_version.minor == 0)
+		old_caps = true;
+	else
+		old_caps = false;
 
 	return EFI_SUCCESS;
 }
 
+bool
+efi_tpm2_present(void)
+{
+	if (old_caps) {
+		tree_boot_service_capability_t *caps_1_0;
 
-efi_status_t __init
-efi_setup_tpm(efi_system_table_t *sys_table_arg)
+		caps_1_0 = (tree_boot_service_capability_t *)&bs_caps;
+		if (caps_1_0->tpm_present_flag)
+			return true;
+	} else {
+		if (bs_caps.tpm_present_flag)
+			return true;
+	}
+
+	return false;
+}
+
+static void
+save_efi_tpm2_config_table(void)
+{
+	void *va;
+	
+
+}
+
+void
+efi_tpm2_init(void)
 {
 	efi_tcg2_protocol_t *tcg2;
 	efi_guid_t tcg2_proto = EFI_TCG2_PROTOCOL_GUID;
@@ -248,19 +271,19 @@ efi_setup_tpm(efi_system_table_t *sys_table_arg)
 	efi_physical_addr_t event_log_last_entry;
 	efi_bool_t event_log_truncated = 0;
 	size_t last_entry_size;
-	bool old_caps = false;
 	int rc;
 
 	status = efi_call_early(locate_protocol, &tcg2_proto, NULL,
 				(void **)&tcg2);
-	if (status != EFI_SUCCESS) {
+	if (status != EFI_SUCCESS)
 		pr_info("No EFI TPM2 protocol installed\n");
-		return status;
-	}
 
-	status = tpm2_get_caps(tcg2, &bs_cap, &old_caps);
+	status = tpm2_get_caps(tcg2);
+	if (status != EFI_SUCCESS)
+		return;
 
-
+	if (!efi_tpm2_present())
+		return;
 
 	status = __efi_call_early(tcg2->get_event_log, tcg2,
 				  EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
@@ -268,31 +291,32 @@ efi_setup_tpm(efi_system_table_t *sys_table_arg)
 				  &event_log_last_entry,
 				  &event_log_truncated);
 	if (status != EFI_SUCCESS)
-		return status;
+		return;
 
 	tcg2_event_log_truncated = event_log_truncated ? true : false;
 	/* check if there's no tpm present */
 	if (event_log_address == 0 &&
 	    event_log_last_entry == 0 &&
 	    event_log_truncated == 0)
-		return EFI_UNSUPPORTED;
+		return;
 
 	tcg2_event_log_last_entry = (phys_addr_t)event_log_last_entry;
 
 	rc = tcg2_get_header_info(event_log_address);
 	if (rc < 0)
-		return EFI_UNSUPPORTED;
+		return;
 
 	last_entry_size = tcg2_get_entry_size(event_log_last_entry);
 	if (last_entry_size < 0)
-		return EFI_UNSUPPORTED;
+		return;
 
 	tcg2_event_log_size = (event_log_last_entry - event_log_address)
 		+ last_entry_size;
 
 	efi_mem_reserve(tcg2_event_log, tcg2_event_log_size);
 
-	tpm2_boot_service_capability = &bs_cap;
+	save_efi_tpm2_config_table();
+
 	have_log = true;
-	return EFI_SUCCESS;
+	return;
 }

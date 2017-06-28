@@ -259,6 +259,7 @@ void __init efi_init(void)
 
 	reserve_regions();
 	efi_esrt_init();
+	efi_tpm2_init();
 
 	memblock_reserve(params.mmap & PAGE_MASK,
 			 PAGE_ALIGN(params.mmap_size +

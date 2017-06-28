@@ -955,6 +955,7 @@ extern struct efi {
 	unsigned long runtime;		/* runtime table */
 	unsigned long config_table;	/* config tables */
 	unsigned long esrt;		/* ESRT table */
+	unsigned long tpm2;		/* TCG TPM2 Final Events table */
 	unsigned long properties_table;	/* properties table */
 	unsigned long mem_attr_table;	/* memory attributes table */
 	unsigned long rng_seed;		/* UEFI firmware random seed */
@@ -1031,6 +1032,13 @@ extern int efi_config_init(efi_config_table_type_t *arch_tables);
 extern void __init efi_esrt_init(void);
 #else
 static inline void efi_esrt_init(void) { }
+#endif
+#ifdef CONFIG_TCG_TPM2_EFI
+extern void __init efi_tpm2_init(void);
+extern bool efi_tpm2_present(void);
+#else
+extern void efi_tpm2_init(void) { }
+extern bool efi_tpm2_present(void) { }
 #endif
 extern int efi_config_parse_tables(void *config_tables, int count, int sz,
 				   efi_config_table_type_t *arch_tables);

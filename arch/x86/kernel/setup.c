@@ -1105,6 +1105,7 @@ void __init setup_arch(char **cmdline_p)
 		efi_fake_memmap();
 		efi_find_mirror();
 		efi_esrt_init();
+		efi_tpm2_init();
 
 		/*
 		 * The EFI specification says that boot service code won't be
