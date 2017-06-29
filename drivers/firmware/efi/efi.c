@@ -467,7 +467,6 @@ static __initdata efi_config_table_type_t common_tables[] = {
 	{SMBIOS3_TABLE_GUID, "SMBIOS 3.0", &efi.smbios3},
 	{EFI_SYSTEM_RESOURCE_TABLE_GUID, "ESRT", &efi.esrt},
 	{EFI_PROPERTIES_TABLE_GUID, "PROP", &efi.properties_table},
-	{LINUX_EFI_RANDOM_SEED_TABLE_GUID, "RNG", &efi.rng_seed},
 	{LINUX_EFI_TPM_EVENT_LOG_GUID, "TPMEventLog", &efi.tpm_log},
 	{LINUX_EFI_MEMRESERVE_TABLE_GUID, "MEMRESERVE", &efi.mem_reserve},
 	{NULL_GUID, NULL, NULL},
@@ -900,47 +899,3 @@ static int __init efi_memreserve_root_init(void)
 	return 0;
 }
 early_initcall(efi_memreserve_root_init);
-
-#ifdef CONFIG_KEXEC
-static int update_efi_random_seed(struct notifier_block *nb,
-				  unsigned long code, void *unused)
-{
-	struct linux_efi_random_seed *seed;
-	u32 size = 0;
-
-	if (!kexec_in_progress)
-		return NOTIFY_DONE;
-
-	seed = memremap(efi.rng_seed.pa, sizeof(*seed), MEMREMAP_WB);
-	if (seed != NULL) {
-		size = min(seed->size, EFI_RANDOM_SEED_SIZE);
-		memunmap(seed);
-	} else {
-		pr_err("Could not map UEFI random seed!\n");
-	}
-	if (size > 0) {
-		seed = memremap(efi.rng_seed.pa, sizeof(*seed) + size,
-				MEMREMAP_WB);
-		if (seed != NULL) {
-			seed->size = size;
-			get_random_bytes(seed->bits, seed->size);
-			memunmap(seed);
-		} else {
-			pr_err("Could not map UEFI random seed!\n");
-		}
-	}
-	return NOTIFY_DONE;
-}
-
-static struct notifier_block efi_random_seed_nb = {
-	.notifier_call = update_efi_random_seed,
-};
-
-static int register_update_efi_random_seed(void)
-{
-	if (!efi_config_table_valid(&efi.rng_seed))
-		return 0;
-	return register_reboot_notifier(&efi_random_seed_nb);
-}
-late_initcall(register_update_efi_random_seed);
-#endif

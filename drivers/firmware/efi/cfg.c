@@ -28,9 +28,11 @@ void __init efi_config_table_register(efi_config_table_type_t *drv)
 }
 
 efi_config_table_type_t efi_mem_attr_config_table;
+efi_config_table_type_t rng_seed_config_table;
 
 static efi_config_table_type_t *common_tables[] = {
 	efi_mem_attr_config_table,
+	rng_seed_config_table,
 	NULL
 };
 
@@ -230,3 +232,93 @@ int __init efi_config_table_init(void)
 	early_memunmap(config_tables, efi.systab->nr_tables * sz);
 	return ret;
 }
+
+/* Everything below here is smallish common table handlers... */
+ssize_t __init rng_seed_probe(phys_addr_t pa, size_t max)
+{
+	struct linux_efi_random_seed *seed;
+	u32 size = 0;
+
+	if (sizeof(*seed) > max)
+		return -EINVAL;
+
+	seed = early_memremap(pa, sizeof(*seed));
+	if (seed == NULL) {
+		pr_err("Could not map UEFI random seed!\n");
+		return -1;
+	}
+
+	size = seed->size;
+	early_memunmap(seed, sizeof(*seed));
+
+	if (size == 0)
+		return sizeof(*seed);
+
+	if (size > (SIZE_MAX >> 1) - sizeof(*seed))
+		return -EINVAL;
+	size += sizeof(*seed);
+	return size;
+}
+
+static efi_config_table_type_t rng_seed_config_table = {
+	.guid = LINUX_EFI_RANDOM_SEED_TABLE_GUID,
+	.name = "RNG",
+	.probe = rng_seed_probe,
+	.init = rng_seed_init,
+	.info = &efi.rng_seed,
+	.reserve = true,
+};
+
+static int __init rng_seed_init(phys_addr_t pa, size_t size)
+{
+	struct linux_efi_random_seed *seed;
+
+	seed = early_memremap(pa, size);
+	if (seed == NULL) {
+		pr_err("Could not map UEFI random seed!\n");
+		return -ENOMEM;
+	}
+
+	add_device_randomness(seed->bits, seed->size);
+	early_memunmap(seed, size);
+	return 0;
+}
+
+#ifdef CONFIG_KEXEC
+static int update_efi_random_seed(struct notifier_block *nb,
+				  unsigned long code, void *unused)
+{
+	struct linux_efi_random_seed *seed;
+
+	if (!efi_config_table_valid(&efi.rng_seed))
+		return NOTIFY_DONE;
+
+	if (!kexec_in_progress)
+		return NOTIFY_DONE;
+
+	seed = memremap(efi.rng_seed.pa, efi.rng_seed.size,
+			MEMREMAP_WB);
+	if (seed == NULL) {
+		pr_err("Could not map UEFI random seed!\n");
+		return NOTIFY_DONE;
+	}
+
+	get_random_bytes(seed->bits, seed->size);
+	memunmap(seed);
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block efi_random_seed_nb = {
+	.notifier_call = update_efi_random_seed,
+};
+
+static int register_update_efi_random_seed(void)
+{
+	if (!efi_config_table_valid(&efi.rng_seed))
+		return 0;
+
+	return register_reboot_notifier(&efi_random_seed_nb);
+}
+late_initcall(register_update_efi_random_seed);
+#endif
