@@ -461,8 +461,6 @@ void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 }
 
 static __initdata efi_config_table_type_t common_tables[] = {
-	{ACPI_20_TABLE_GUID, "ACPI 2.0", &efi.acpi20},
-	{ACPI_TABLE_GUID, "ACPI", &efi.acpi},
 	{SMBIOS_TABLE_GUID, "SMBIOS", &efi.smbios},
 	{SMBIOS3_TABLE_GUID, "SMBIOS 3.0", &efi.smbios3},
 	{EFI_SYSTEM_RESOURCE_TABLE_GUID, "ESRT", &efi.esrt},

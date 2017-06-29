@@ -12,6 +12,7 @@
 #include <linux/efi.h>
 #include <linux/random.h>
 #include <linux/kexec.h>
+#include <linux/acpi.h>
 
 static LIST_HEAD(config_table_drivers);
 
@@ -30,11 +31,15 @@ void __init efi_config_table_register(efi_config_table_type_t *drv)
 efi_config_table_type_t efi_mem_attr_config_table;
 efi_config_table_type_t rng_seed_config_table;
 efi_config_table_type_t properties_config_table;
+efi_config_table_type_t acpi20_config_table;
+efi_config_table_type_t acpi_config_table;
 
 static efi_config_table_type_t *common_tables[] = {
 	efi_mem_attr_config_table,
 	rng_seed_config_table,
 	properties_config_table,
+	acpi20_config_table,
+	acpi_config_table,
 	NULL
 };
 
@@ -351,5 +356,31 @@ static efi_config_table_type_t properties_config_table = {
 	.name = "PROP",
 	.probe = properties_probe,
 	.info = &efi.properties_table,
+	.reserve = true,
+};
+
+static ssize_t __init
+efi_acpi20_probe(phys_addr_t pa, size_t max)
+{
+	struct acpi_table_rsdp *rsdp;
+	if (max < sizeof(*rsdp))
+		return -EINVAL;
+
+	return sizeof(*rsdp);
+}
+
+static efi_config_table_type_t acpi20_config_table = {
+	.guid = ACPI_20_TABLE_GUID,
+	.name = "ACPI20",
+	.probe = efi_acpi20_probe,
+	.info = &efi.acpi20,
+	.reserve = true,
+};
+
+static efi_config_table_type_t acpi_config_table = {
+	.guid = ACPI_TABLE_GUID,
+	.name = "ACPI",
+	.probe = efi_acpi20_probe,
+	.info = &efi.acpi,
 	.reserve = true,
 };
