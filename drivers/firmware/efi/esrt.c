@@ -52,17 +52,12 @@ struct efi_system_resource_table {
 	u64	fw_resource_version;
 	u8	entries[];
 };
-
-static phys_addr_t esrt_data;
-static size_t esrt_data_size;
-
 static struct efi_system_resource_table *esrt;
 
 struct esre_entry {
 	union {
 		struct efi_system_resource_entry_v1 *esre1;
 	} esre;
-
 	struct kobject kobj;
 	struct list_head list;
 };
@@ -210,20 +205,9 @@ static struct attribute *esrt_attrs[] = {
 	NULL,
 };
 
-static inline int esrt_table_exists(void)
-{
-	if (!efi_enabled(EFI_CONFIG_TABLES))
-		return 0;
-	if (!efi_config_table_valid(&efi.esrt))
-		return 0;
-	return 1;
-}
-
 static umode_t esrt_attr_is_visible(struct kobject *kobj,
 				    struct attribute *attr, int n)
 {
-	if (!esrt_table_exists())
-		return 0;
 	return attr->mode;
 }
 
@@ -235,50 +219,27 @@ static const struct attribute_group esrt_attr_group = {
 /*
  * remap the table, validate it, mark it reserved and unmap it.
  */
-void __init efi_esrt_init(void)
+ssize_t __init esrt_probe(phys_addr_t pa, size_t max)
 {
 	void *va;
 	struct efi_system_resource_table tmpesrt;
 	struct efi_system_resource_entry_v1 *v1_entries;
-	size_t size, max, entry_size, entries_size;
-	efi_memory_desc_t md;
-	int rc;
-	phys_addr_t end;
+	size_t entry_size, entries_size;
+	ssize_t size, ret = -EINVAL;
 
 	pr_debug("esrt-init: loading.\n");
-	if (!esrt_table_exists())
-		return;
-
-	rc = efi_mem_desc_lookup(efi.esrt.pa, &md);
-	if (rc < 0 ||
-	    (!(md.attribute & EFI_MEMORY_RUNTIME) &&
-	     md.type != EFI_BOOT_SERVICES_DATA &&
-	     md.type != EFI_RUNTIME_SERVICES_DATA)) {
-		pr_warn("ESRT header is not in the memory map.\n");
-		return;
-	}
-
-	max = efi_mem_desc_end(&md);
-	if (max < efi.esrt.pa) {
-		pr_err("EFI memory descriptor is invalid. (esrt: %pa max: %p)\n",
-		       &efi.esrt.pa, (void *)max);
-		return;
-	}
 
 	size = sizeof(*esrt);
-	max -= efi.esrt.pa;
-
 	if (max < size) {
 		pr_err("ESRT header doesn't fit on single memory map entry. (size: %zu max: %zu)\n",
 		       size, max);
-		return;
+		return ret;
 	}
 
-	va = early_memremap(efi.esrt.pa, size);
+	va = early_memremap(pa, size);
 	if (!va) {
-		pr_err("early_memremap(%pa, %zu) failed.\n", &efi.esrt.pa,
-		       size);
-		return;
+		pr_err("early_memremap(%pa, %zu) failed.\n", &pa, size);
+		return -ENOMEM;
 	}
 
 	memcpy(&tmpesrt, va, sizeof(tmpesrt));
@@ -289,7 +250,7 @@ void __init efi_esrt_init(void)
 	} else {
 		pr_err("Unsupported ESRT version %lld.\n",
 		       tmpesrt.fw_resource_version);
-		return;
+		goto err_memunmap;
 	}
 
 	if (tmpesrt.fw_resource_count > 0 && max - size < entry_size) {
@@ -322,26 +283,24 @@ void __init efi_esrt_init(void)
 		return;
 	}
 
+	/* remap it with our (plausible) new pages */
+	early_memunmap(va, size);
+	va = NULL;
 	size += entries_size;
 
-	esrt_data = efi.esrt.pa;
-	esrt_data_size = size;
-
-	end = esrt_data + size;
-	pr_info("Reserving ESRT space from %pa to %pa.\n", &esrt_data, &end);
-	if (md.type == EFI_BOOT_SERVICES_DATA)
-		efi_mem_reserve(esrt_data, esrt_data_size);
+	ret = size;
 
 	pr_debug("esrt-init: loaded.\n");
+err_memunmap:
+	if (va)
+		early_memunmap(va, size);
+	return ret;
 }
 
 static int __init register_entries(void)
 {
 	struct efi_system_resource_entry_v1 *v1_entries = (void *)esrt->entries;
 	int i, rc;
-
-	if (!esrt_table_exists())
-		return 0;
 
 	for (i = 0; i < le32_to_cpu(esrt->fw_resource_count); i++) {
 		void *esre = NULL;
@@ -372,18 +331,15 @@ static void cleanup_entry_list(void)
 	}
 }
 
-static int __init esrt_sysfs_init(void)
+static int __init esrt_init(phys_addr_t pa, size_t size)
 {
 	int error;
 
 	pr_debug("esrt-sysfs: loading.\n");
-	if (!esrt_data || !esrt_data_size)
-		return -ENOSYS;
 
-	esrt = memremap(esrt_data, esrt_data_size, MEMREMAP_WB);
+	esrt = memremap(pa, size, MEMREMAP_WB);
 	if (!esrt) {
-		pr_err("memremap(%pa, %zu) failed.\n", &esrt_data,
-		       esrt_data_size);
+		pr_err("memremap(%pa, %zu) failed.\n", &pa, size);
 		return -ENOMEM;
 	}
 
@@ -424,10 +380,23 @@ err_remove_esrt:
 	kobject_put(esrt_kobj);
 err:
 	memunmap(esrt);
-	esrt = NULL;
 	return error;
 }
-device_initcall(esrt_sysfs_init);
+
+static efi_config_table_type_t drv = {
+	.guid = EFI_SYSTEM_RESOURCE_TABLE_GUID,
+	.name = "ESRT",
+	.probe = esrt_probe,
+	.init = esrt_init,
+	.info = &efi.esrt,
+};
+
+static int __init esrt_driver_register(void)
+{
+	efi_config_table_register(&drv);
+	return 0;
+}
+pure_initcall(esrt_driver_register);
 
 /*
 MODULE_AUTHOR("Peter Jones <pjones@redhat.com>");

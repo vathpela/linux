@@ -443,7 +443,7 @@ void __init __weak efi_arch_mem_reserve(phys_addr_t addr, u64 size) {}
  *
  * This function should be called drivers once they've parsed EFI
  * configuration tables to figure out where their data lives, e.g.
- * efi_esrt_init().
+ * efi_enumerate_config_tables().
  */
 void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 {
@@ -461,7 +461,6 @@ void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 }
 
 static __initdata efi_config_table_type_t common_tables[] = {
-	{EFI_SYSTEM_RESOURCE_TABLE_GUID, "ESRT", &efi.esrt},
 	{LINUX_EFI_TPM_EVENT_LOG_GUID, "TPMEventLog", &efi.tpm_log},
 	{LINUX_EFI_MEMRESERVE_TABLE_GUID, "MEMRESERVE", &efi.mem_reserve},
 	{NULL_GUID, NULL, NULL},

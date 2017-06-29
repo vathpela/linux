@@ -81,11 +81,6 @@ extern int __init efi_memmap_split_count(efi_memory_desc_t *md,
 					 struct range *range);
 extern void __init efi_memmap_insert(struct efi_memory_map *old_memmap,
 				     void *buf, struct efi_mem_range *mem);
-#ifdef CONFIG_EFI_ESRT
-extern void __init efi_esrt_init(void);
-#else
-static inline void efi_esrt_init(void) { }
-#endif
 
 extern efi_config_table_type_t *efi_arch_config_tables[];
 extern int __init efi_enumerate_config_tables(void);
@@ -98,7 +93,6 @@ efi_config_table_valid(efi_config_table_info_t *info)
 		return false;
 	return true;
 }
-
 extern u64 efi_get_iobase (void);
 extern int efi_mem_type(unsigned long phys_addr);
 extern u64 efi_mem_attributes (unsigned long phys_addr);
