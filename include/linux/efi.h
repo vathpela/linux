@@ -948,7 +948,6 @@ extern struct efi {
 	unsigned long sal_systab;	/* SAL system table */
 	unsigned long boot_info;	/* boot info table */
 	unsigned long hcdp;		/* HCDP table */
-	unsigned long uga;		/* UGA table */
 	unsigned long uv_systab;	/* UV system table */
 	unsigned long fw_vendor;	/* fw_vendor */
 	unsigned long runtime;		/* runtime table */

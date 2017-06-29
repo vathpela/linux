@@ -43,7 +43,6 @@ struct efi __read_mostly efi = {
 	.sal_systab		= EFI_INVALID_TABLE_ADDR,
 	.boot_info		= EFI_INVALID_TABLE_ADDR,
 	.hcdp			= EFI_INVALID_TABLE_ADDR,
-	.uga			= EFI_INVALID_TABLE_ADDR,
 	.uv_systab		= EFI_INVALID_TABLE_ADDR,
 	.fw_vendor		= EFI_INVALID_TABLE_ADDR,
 	.runtime		= EFI_INVALID_TABLE_ADDR,
@@ -153,8 +152,6 @@ static ssize_t systab_show(struct kobject *kobj,
 		str += sprintf(str, "HCDP=0x%lx\n", efi.hcdp);
 	if (efi.boot_info != EFI_INVALID_TABLE_ADDR)
 		str += sprintf(str, "BOOTINFO=0x%lx\n", efi.boot_info);
-	if (efi.uga != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "UGA=0x%lx\n", efi.uga);
 
 	return str - buf;
 }
@@ -479,7 +476,6 @@ static __initdata efi_config_table_type_t common_tables[] = {
 	{SAL_SYSTEM_TABLE_GUID, "SALsystab", &efi.sal_systab},
 	{SMBIOS_TABLE_GUID, "SMBIOS", &efi.smbios},
 	{SMBIOS3_TABLE_GUID, "SMBIOS 3.0", &efi.smbios3},
-	{UGA_IO_PROTOCOL_GUID, "UGA", &efi.uga},
 	{EFI_SYSTEM_RESOURCE_TABLE_GUID, "ESRT", &efi.esrt},
 	{EFI_PROPERTIES_TABLE_GUID, "PROP", &efi.properties_table},
 	{EFI_MEMORY_ATTRIBUTES_TABLE_GUID, "MEMATTR", &efi.mem_attr_table},
