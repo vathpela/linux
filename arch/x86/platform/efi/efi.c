@@ -63,13 +63,6 @@ struct efi_arch_priv __read_mostly efi_arch_priv = {
 #endif
 };
 
-static efi_config_table_type_t arch_tables[] __initdata = {
-#ifdef CONFIG_X86_UV
-	{UV_SYSTEM_TABLE_GUID, "UVsystab", &efi_arch_priv.uv_systab},
-#endif
-	{NULL_GUID, NULL, NULL},
-};
-
 u64 efi_setup;		/* efi setup_data physical address */
 
 static int add_efi_memmap __initdata;
@@ -1068,6 +1061,9 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 	return str - buf;
 }
 
+extern efi_config_table_type_t uv_systab_config_table;
+
 efi_config_table_type_t *efi_arch_config_tables[] = {
+	uv_systab_config_table,
 	NULL
 };

@@ -189,36 +189,68 @@ int uv_bios_set_legacy_vga_target(bool decode, int domain, int bus)
 EXPORT_SYMBOL_GPL(uv_bios_set_legacy_vga_target);
 
 #ifdef CONFIG_EFI
-void uv_bios_init(void)
+static ssize_t __init uv_systab_probe(phys_addr_t pa, size_t max)
 {
-	phys_addr_t pa = efi.arch_priv->uv_systab.pa;
+	ssize_t size, ret = -EINVAL;
+	struct uv_systab *systab;
 
-	uv_systab = NULL;
-
-	if (!efi_config_table_valid(&efi.arch_priv->uv_systab) ||
-	    !pa || efi_runtime_disabled()) {
-		pr_crit("UV: UVsystab: missing\n");
-		return;
+	size = sizeof(*systab);
+	if (max < size) {
+		pr_err("UV: UVsystab: memory segment is too small\n");
+		return ret;
 	}
 
-	uv_systab = ioremap(pa, sizeof(struct uv_systab));
-	if (!uv_systab || strncmp(uv_systab->signature, UV_SYSTAB_SIG, 4)) {
+	systab = early_memremap(pa, size);
+	if (!systab) {
+		pr_err("UV: early_memremap(%pa, %zd) failed.\n", &pa, size);
+		return -ENOMEM;
+	}
+
+	if ((SIZE_MAX >> 1) < systab->size) {
+		pr_err("UV: UVsystab: memory segment is too small\n");
+		goto err_memunmap;
+	}
+
+	size = systab->size;
+	early_memunmap(systab, sizeof(*systab));
+	systab = early_memremap(pa, size);
+	if (!systab) {
+		pr_err("UV: early_memremap(%pa, %zd) failed.\n", &pa, size);
+		return -ENOMEM;
+	}
+
+	if (strncmp(systab->signature, UV_SYSTAB_SIG, 4)) {
 		pr_err("UV: UVsystab: bad signature!\n");
-		iounmap(uv_systab);
-		return;
+		goto err_memunmap;
 	}
 
-	/* Starting with UV4 the UV systab size is variable */
-	if (uv_systab->revision >= UV_SYSTAB_VERSION_UV4) {
-		int size = uv_systab->size;
-
-		iounmap(uv_systab);
-		uv_systab = ioremap(pa, size);
-		if (!uv_systab) {
-			pr_err("UV: UVsystab: ioremap(%d) failed!\n", size);
-			return;
-		}
+	if (systab->revision < UV_SYSTAB_VERSION_UV4) {
+		pr_err("UV: UVsystab: unsupported version\n");
+		ret = -ENOTSUPP;
+		goto err_memunmap;
 	}
-	pr_info("UV: UVsystab: Revision:%x\n", uv_systab->revision);
+
+	ret = systab->size;
+err_memunmap:
+	if (systab)
+		early_memunmap(systab, size);
+	return ret;
 }
+
+static int __init uv_systab_init(phys_addr_t pa, size_t size)
+{
+	uv_systab = early_memremap(pa, size);
+	if (!uv_systab)
+		return -ENOMEM;
+	pr_info("UV: UVsystab: Revision:%x\n", uv_systab->revision);
+	return 0;
+}
+
+efi_config_table_type_t uv_systab_config_table = {
+	.guid = UV_SYSTEM_TABLE_GUID,
+	.name = "UVsystab",
+	.probe = uv_systab_probe,
+	.init = uv_systab_init,
+	.info = &efi_arch_priv.uv_systab,
+};
 #endif
