@@ -27,7 +27,10 @@ void __init efi_config_table_register(efi_config_table_type_t *drv)
 	list_add_tail(&drv->cfg_drv_list, &config_table_drivers);
 }
 
+efi_config_table_type_t efi_mem_attr_config_table;
+
 static efi_config_table_type_t *common_tables[] = {
+	efi_mem_attr_config_table,
 	NULL
 };
 
@@ -171,7 +174,6 @@ efi_config_table_type_t smbios_config_table;
 efi_config_table_type_t smbios3_config_table;
 efi_config_table_type_t esrt_config_table;
 efi_config_table_type_t properties_config_table;
-efi_config_table_type_t efi_mem_attr_config_table;
 efi_config_table_type_t rng_seed_config_table;
 efi_config_table_type_t tpm_log_config_table;
 efi_config_table_type_t mem_reserve_config_table;

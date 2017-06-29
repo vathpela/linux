@@ -18,39 +18,6 @@
 static int __initdata tbl_size;
 
 /*
- * Reserve the memory associated with the Memory Attributes configuration
- * table, if it exists.
- */
-int __init efi_memattr_init(void)
-{
-	efi_memory_attributes_table_t *tbl;
-
-	if (!efi_config_table_valid(&efi.mem_attr_table))
-		return 0;
-
-	tbl = early_memremap(efi.mem_attr_table.pa, sizeof(*tbl));
-	if (!tbl) {
-		pr_err("Failed to map EFI Memory Attributes table @ %pa\n",
-		       &efi.mem_attr_table.pa);
-		return -ENOMEM;
-	}
-
-	if (tbl->version > 1) {
-		pr_warn("Unexpected EFI Memory Attributes table version %d\n",
-			tbl->version);
-		goto unmap;
-	}
-
-	tbl_size = sizeof(*tbl) + tbl->num_entries * tbl->desc_size;
-	memblock_reserve(efi.mem_attr_table.pa, tbl_size);
-	set_bit(EFI_MEM_ATTR, &efi.flags);
-
-unmap:
-	early_memunmap(tbl, sizeof(*tbl));
-	return 0;
-}
-
-/*
  * Returns a copy @out of the UEFI memory descriptor @in if it is covered
  * entirely by a UEFI memory map entry with matching attributes. The virtual
  * address of @out is set according to the matching entry that was found.
@@ -185,3 +152,55 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 	memunmap(tbl);
 	return ret;
 }
+
+/*
+ * Find and validate the memory associated with the Memory Attributes
+ * configuration table, if it exists.
+ */
+ssize_t __init efi_memattr_probe(phys_addr_t pa, size_t max)
+{
+	efi_memory_attributes_table_t *tbl;
+	ssize_t ret = -EINVAL;
+
+	if (!efi_enabled(EFI_MEMMAP))
+		return -ENOTSUPP;
+
+	if (max < sizeof (*tbl))
+		return -EINVAL;
+
+	tbl = early_memremap(pa, sizeof(*tbl));
+	if (!tbl) {
+		pr_err("Failed to map EFI Memory Attributes table @ %pa\n",
+		       &pa);
+		return -ENOMEM;
+	}
+
+	if (tbl->version > 1) {
+		pr_warn("Unexpected EFI Memory Attributes table version %d\n",
+			tbl->version);
+		goto unmap;
+	}
+
+	tbl_size = sizeof(*tbl) + tbl->num_entries * tbl->desc_size;
+	if (tbl_size > max) {
+		pr_err("EFI Memory Attributes table is too large (%d > %zu)\n",
+		       tbl_size, max);
+		return -EINVAL;
+	}
+
+	set_bit(EFI_MEM_ATTR, &efi.flags);
+	ret = tbl_size;
+
+unmap:
+	early_memunmap(tbl, sizeof(*tbl));
+	return ret;
+
+}
+
+efi_config_table_type_t efi_mem_attr_config_table = {
+	.guid = EFI_MEMORY_ATTRIBUTES_TABLE_GUID,
+	.name = "MEMATTR",
+	.probe = efi_memattr_probe,
+	.info = &efi.mem_attr_table,
+	.reserve = true,
+};
