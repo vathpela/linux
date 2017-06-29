@@ -29,10 +29,12 @@ void __init efi_config_table_register(efi_config_table_type_t *drv)
 
 efi_config_table_type_t efi_mem_attr_config_table;
 efi_config_table_type_t rng_seed_config_table;
+efi_config_table_type_t properties_config_table;
 
 static efi_config_table_type_t *common_tables[] = {
 	efi_mem_attr_config_table,
 	rng_seed_config_table,
+	properties_config_table,
 	NULL
 };
 
@@ -322,3 +324,32 @@ static int register_update_efi_random_seed(void)
 }
 late_initcall(register_update_efi_random_seed);
 #endif
+
+static ssize_t __init properties_probe(phys_addr_t pa, size_t max_sz)
+{
+	efi_properties_table_t *tbl;
+
+	if (max_sz < sizeof (*tbl))
+		return -EINVAL;
+
+	tbl = early_memremap(pa, sizeof(*tbl));
+	if (tbl == NULL) {
+		pr_err("Could not map Properties table!\n");
+		return -ENOMEM;
+	}
+
+	if (tbl->memory_protection_attribute &
+	    EFI_PROPERTIES_RUNTIME_MEMORY_PROTECTION_NON_EXECUTABLE_PE_DATA)
+		set_bit(EFI_NX_PE_DATA, &efi.flags);
+
+	early_memunmap(tbl, sizeof(*tbl));
+	return sizeof(*tbl);
+}
+
+static efi_config_table_type_t properties_config_table = {
+	.guid = EFI_PROPERTIES_TABLE_GUID,
+	.name = "PROP",
+	.probe = properties_probe,
+	.info = &efi.properties_table,
+	.reserve = true,
+};
