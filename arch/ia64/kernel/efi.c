@@ -51,13 +51,6 @@ struct efi_arch_priv __read_mostly efi_arch_priv = {
 	.hcdp		= INIT_EFI_CONFIG_TABLE_INFO,
 };
 
-static __initdata efi_config_table_type_t arch_tables[] = {
-	{PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID, "PALO", &efi_arch_priv.palo},
-	{HCDP_TABLE_GUID, "HCDP", &efi_arch_priv.hcdp},
-	{SAL_SYSTEM_TABLE_GUID, "SALsystab", &efi_arch_priv.sal_systab},
-	{NULL_GUID, NULL, 0},
-};
-
 extern efi_status_t efi_call_phys (void *, ...);
 
 static efi_runtime_services_t *runtime;
@@ -1369,6 +1362,30 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 	return str - buf;
 }
 
+static efi_config_table_type_t palo_config_table = {
+	.guid = PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID,
+	.name = "PALO",
+	.probe = palo_probe,
+	.info = &efi_arch_priv.palo,
+};
+
+static efi_config_table_type_t hcdp_config_table = {
+	.guid = HCDP_TABLE_GUID,
+	.name = "HCDP",
+	.probe = hcdp_probe,
+	.info = &efi_arch_priv.hcdp,
+};
+
+static efi_config_table_type_t sal_systab_config_table = {
+	.guid = SAL_SYSTEM_TABLE_GUID,
+	.name = "SALsystab",
+	.probe = sal_systab_probe,
+	.info = &efi_arch_priv.sal_systab,
+};
+
 efi_config_table_type_t *efi_arch_config_tables[] = {
+	palo_config_table,
+	hcdp_config_table,
+	sal_systab_config_table,
 	NULL
 };
