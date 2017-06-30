@@ -461,8 +461,6 @@ void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 }
 
 static __initdata efi_config_table_type_t common_tables[] = {
-	{SMBIOS_TABLE_GUID, "SMBIOS", &efi.smbios},
-	{SMBIOS3_TABLE_GUID, "SMBIOS 3.0", &efi.smbios3},
 	{EFI_SYSTEM_RESOURCE_TABLE_GUID, "ESRT", &efi.esrt},
 	{LINUX_EFI_TPM_EVENT_LOG_GUID, "TPMEventLog", &efi.tpm_log},
 	{LINUX_EFI_MEMRESERVE_TABLE_GUID, "MEMRESERVE", &efi.mem_reserve},

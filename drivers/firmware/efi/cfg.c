@@ -33,6 +33,8 @@ efi_config_table_type_t rng_seed_config_table;
 efi_config_table_type_t properties_config_table;
 efi_config_table_type_t acpi20_config_table;
 efi_config_table_type_t acpi_config_table;
+efi_config_table_type_t smbios3_config_table;
+efi_config_table_type_t smbios_config_table;
 
 static efi_config_table_type_t *common_tables[] = {
 	efi_mem_attr_config_table,
@@ -40,6 +42,8 @@ static efi_config_table_type_t *common_tables[] = {
 	properties_config_table,
 	acpi20_config_table,
 	acpi_config_table,
+	smbios3_config_table,
+	smbios_config_table,
 	NULL
 };
 
@@ -382,5 +386,41 @@ static efi_config_table_type_t acpi_config_table = {
 	.name = "ACPI",
 	.probe = efi_acpi20_probe,
 	.info = &efi.acpi,
+	.reserve = true,
+};
+
+static ssize_t __init
+efi_smbios3_probe(phys_addr_t pa, size_t max)
+{
+	u64 64_bit_ptr;
+	if (max < sizeof(64_bit_ptr))
+		return -EINVAL;
+
+	return sizeof(64_bit_ptr);
+}
+
+static efi_config_table_type_t smbios3_config_table = {
+	.guid = SMBIOS3_TABLE_GUID,
+	.name = "SMBIOS 3.0",
+	.probe = efi_smbios3_probe,
+	.info = &efi.smbios3,
+	.reserve = true,
+};
+
+static ssize_t __init
+efi_smbios_probe(phys_addr_t pa, size_t max)
+{
+	u32 32_bit_ptr;
+	if (max < sizeof(32_bit_ptr))
+		return -EINVAL;
+
+	return sizeof(32_bit_ptr);
+}
+
+static efi_config_table_type_t smbios_config_table = {
+	.guid = SMBIOS_TABLE_GUID,
+	.name = "SMBIOS",
+	.probe = efi_smbios_probe,
+	.info = &efi.smbios,
 	.reserve = true,
 };
