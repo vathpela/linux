@@ -27,7 +27,7 @@
 u64 efi_system_table;
 
 struct efi_arch_priv __read_mostly efi_arch_priv = {
-	.placeholder	= EFI_INVALID_TABLE_ADDR
+	.screen_info = INIT_EFI_CONFIG_TABLE_INFO,
 };
 
 static int __init is_memory(efi_memory_desc_t *md)
@@ -59,19 +59,13 @@ static phys_addr_t efi_to_phys(unsigned long addr)
 	return addr;
 }
 
-static __initdata unsigned long screen_info_table = EFI_INVALID_TABLE_ADDR;
-
-static __initdata efi_config_table_type_t arch_tables[] = {
-	{LINUX_EFI_ARM_SCREEN_INFO_TABLE_GUID, NULL, &screen_info_table},
-	{NULL_GUID, NULL, NULL}
-};
-
 static void __init init_screen_info(void)
 {
 	struct screen_info *si;
 
-	if (screen_info_table != EFI_INVALID_TABLE_ADDR) {
-		si = early_memremap_ro(screen_info_table, sizeof(*si));
+	if (efi_config_table_valid(&efi_arch_priv.screen_info)) {
+		phys_addr_t pa = efi_arch_priv.screen_info.pa;
+		si = early_memremap_ro(pa, sizeof(*si));
 		if (!si) {
 			pr_err("Could not map screen_info config table\n");
 			return;
@@ -293,6 +287,15 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 	return 0;
 }
 
+static efi_config_table_type_t screen_info_config_table = {
+	.guid = LINUX_EFI_ARM_SCREEN_INFO_TABLE_GUID,
+	.name = NULL,
+	.probe = efi_screen_info_probe,
+	.info = &efi_arch_priv.screen_info,
+	.reserve = false,
+};
+
 efi_config_table_type_t *efi_arch_config_tables[] = {
+	screen_info_config_table,
 	NULL
 };

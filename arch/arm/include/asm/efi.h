@@ -103,7 +103,7 @@ static inline unsigned long efi_get_max_initrd_addr(unsigned long dram_base,
 }
 
 struct efi_arch_priv {
-	u32 placeholder;
+	efi_config_table_info_t screen_info;
 };
 
 #endif /* _ASM_ARM_EFI_H */
