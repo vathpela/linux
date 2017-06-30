@@ -131,22 +131,7 @@ static int __init uefi_init(void)
 		efi.systab->hdr.revision >> 16,
 		efi.systab->hdr.revision & 0xffff, vendor);
 
-	table_size = sizeof(efi_config_table_64_t) * efi.systab->nr_tables;
-	config_tables = early_memremap_ro(efi_to_phys(efi.systab->tables),
-					  table_size);
-	if (config_tables == NULL) {
-		pr_warn("Unable to map EFI config table array.\n");
-		retval = -ENOMEM;
-		goto out;
-	}
-	retval = efi_config_parse_tables(config_tables, efi.systab->nr_tables,
-					 sizeof(efi_config_table_t),
-					 arch_tables);
-
-	if (!retval)
-		efi.config_table = (unsigned long)efi.systab->tables;
-
-	early_memunmap(config_tables, table_size);
+	efi_enumerate_config_tables();
 out:
 	early_memunmap(efi.systab,  sizeof(efi_system_table_t));
 	return retval;
