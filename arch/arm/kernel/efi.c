@@ -11,6 +11,10 @@
 #include <asm/mach/map.h>
 #include <asm/mmu_context.h>
 
+struct efi_arch_priv __read_mostly efi_arch_priv = {
+	.placeholder	= EFI_INVALID_TABLE_ADDR
+};
+
 static int __init set_permissions(pte_t *ptep, pgtable_t token,
 				  unsigned long addr, void *data)
 {
@@ -75,5 +79,11 @@ int __init efi_create_mapping(struct mm_struct *mm, efi_memory_desc_t *md)
 	 */
 	if (md->attribute & (EFI_MEMORY_RO | EFI_MEMORY_XP))
 		return efi_set_mapping_permissions(mm, md);
+	return 0;
+}
+
+ssize_t efi_arch_priv_show(struct kobject *kobj,
+			   struct kobj_attribute *attr, char *buf)
+{
 	return 0;
 }

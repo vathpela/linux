@@ -4,16 +4,16 @@
 /*
  * All runtime access to EFI goes through this structure:
  */
+extern struct efi_arch_priv efi_arch_priv;
+
 extern struct efi {
 	efi_system_table_t *systab;	/* EFI system table */
+	struct efi_arch_priv *arch_priv;/* Architecture specific private data */
 	unsigned int runtime_version;	/* Runtime services version */
 	unsigned long acpi;		/* ACPI table  (IA64 ext 0.71) */
 	unsigned long acpi20;		/* ACPI table  (ACPI 2.0) */
 	unsigned long smbios;		/* SMBIOS table (32 bit entry point) */
 	unsigned long smbios3;		/* SMBIOS table (64 bit entry point) */
-	unsigned long sal_systab;	/* SAL system table */
-	unsigned long hcdp;		/* HCDP table */
-	unsigned long uv_systab;	/* UV system table */
 	unsigned long fw_vendor;	/* fw_vendor */
 	unsigned long runtime;		/* runtime table */
 	unsigned long config_table;	/* config tables */

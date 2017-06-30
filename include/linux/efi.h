@@ -28,6 +28,7 @@
 
 #include <linux/efi/types.h>
 #include <linux/efi/base.h>
+#include <asm/efi.h>
 #include <asm/page.h>
 
 void efi_native_runtime_setup(void);
@@ -105,6 +106,8 @@ extern struct kobject *efi_kobj;
 
 extern int efi_reboot_quirk_mode;
 extern bool efi_poweroff_required(void);
+extern ssize_t efi_arch_priv_show(struct kobject *kobj,
+				  struct kobj_attribute *attr, char *buf);
 
 #ifdef CONFIG_EFI_FAKE_MEMMAP
 extern void __init efi_fake_memmap(void);

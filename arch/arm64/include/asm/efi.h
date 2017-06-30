@@ -149,4 +149,8 @@ static inline void efi_set_pgd(struct mm_struct *mm)
 void efi_virtmap_load(void);
 void efi_virtmap_unload(void);
 
+struct efi_arch_priv {
+	u32 placeholder;
+};
+
 #endif /* _ASM_EFI_H */

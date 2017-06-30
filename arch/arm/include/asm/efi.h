@@ -102,4 +102,8 @@ static inline unsigned long efi_get_max_initrd_addr(unsigned long dram_base,
 	return dram_base + SZ_512M;
 }
 
+struct efi_arch_priv {
+	u32 placeholder;
+};
+
 #endif /* _ASM_ARM_EFI_H */

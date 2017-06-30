@@ -254,4 +254,12 @@ static inline bool efi_reboot_required(void)
 }
 #endif /* CONFIG_EFI */
 
+struct efi_arch_priv {
+#ifdef CONFIG_X86_UV
+	unsigned long uv_systab;
+#else
+	u32 placeholder;
+#endif
+};
+
 #endif /* _ASM_X86_EFI_H */

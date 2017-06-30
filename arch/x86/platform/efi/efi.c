@@ -57,9 +57,17 @@
 static struct efi efi_phys __initdata;
 static efi_system_table_t efi_systab __initdata;
 
+struct efi_arch_priv __read_mostly efi_arch_priv = {
+#ifdef CONFIG_X86_UV
+	.uv_systab	= EFI_INVALID_TABLE_ADDR,
+#else
+	.placeholder	= EFI_INVALID_TABLE_ADDR,
+#endif
+};
+
 static efi_config_table_type_t arch_tables[] __initdata = {
 #ifdef CONFIG_X86_UV
-	{UV_SYSTEM_TABLE_GUID, "UVsystab", &efi.uv_systab},
+	{UV_SYSTEM_TABLE_GUID, "UVsystab", &efi_arch_priv.uv_systab},
 #endif
 	{NULL_GUID, NULL, NULL},
 };
@@ -1047,3 +1055,17 @@ static int __init arch_parse_efi_cmdline(char *str)
 	return 0;
 }
 early_param("efi", arch_parse_efi_cmdline);
+
+ssize_t efi_arch_priv_show(struct kobject *kobj,
+			   struct kobj_attribute *attr, char *buf)
+{
+	char *str = buf;
+
+#ifdef CONFIG_X86_UV
+	if (efi.arch_priv->uv_systab != EFI_INVALID_TABLE_ADDR)
+		str += sprintf(str, "UV_SYSTAB=0x%lx\n",
+			       efi.arch_priv->uv_systab);
+#endif
+
+	return str - buf;
+}

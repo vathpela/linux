@@ -45,10 +45,16 @@
 
 #define EFI_DEBUG	0
 
-static __initdata unsigned long palo_phys;
+struct efi_arch_priv __read_mostly efi_arch_priv = {
+	.palo_phys	= EFI_INVALID_TABLE_ADDR,
+	.sal_systab	= EFI_INVALID_TABLE_ADDR,
+	.hcdp		= EFI_INVALID_TABLE_ADDR,
+};
 
 static __initdata efi_config_table_type_t arch_tables[] = {
-	{PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID, "PALO", &palo_phys},
+	{PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID, "PALO", &efi_arch_priv.palo_phys},
+	{HCDP_TABLE_GUID, "HCDP", &efi_arch_priv.hcdp},
+	{SAL_SYSTEM_TABLE_GUID, "SALsystab", &efi_arch_priv.sal_systab},
 	{NULL_GUID, NULL, 0},
 };
 
@@ -532,13 +538,11 @@ efi_init (void)
 	       efi.systab->hdr.revision >> 16,
 	       efi.systab->hdr.revision & 0xffff, vendor);
 
-	palo_phys      = EFI_INVALID_TABLE_ADDR;
-
 	if (efi_config_init(arch_tables) != 0)
 		return;
 
-	if (palo_phys != EFI_INVALID_TABLE_ADDR)
-		handle_palo(palo_phys);
+	if (efi_arch_priv.palo_phys != EFI_INVALID_TABLE_ADDR)
+		handle_palo(efi_arch_priv.palo_phys);
 
 	runtime = __va(efi.systab->runtime);
 	efi.get_time = phys_get_time;
@@ -1348,3 +1352,19 @@ vmcore_find_descriptor_size (unsigned long address)
 	return ret;
 }
 #endif
+
+ssize_t efi_arch_priv_show(struct kobject *kobj,
+			   struct kobj_attribute *attr, char *buf)
+{
+	char *str = buf;
+
+	if (efi.arch_priv->sal_systab != EFI_INVALID_TABLE_ADDR)
+		str += sprintf(str, "SAL_SYSTAB=0x%lx\n",
+			       efi.arch_priv->sal_systab);
+
+	if (efi.arch_priv->hcdp != EFI_INVALID_TABLE_ADDR)
+		str += sprintf(str, "HCDP=0x%lx\n",
+			       efi.arch_priv->hcdp);
+
+	return str - buf;
+}

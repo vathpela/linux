@@ -16,6 +16,10 @@
 
 #include <asm/efi.h>
 
+struct efi_arch_priv __read_mostly efi_arch_priv = {
+	.placeholder	= EFI_INVALID_TABLE_ADDR
+};
+
 /*
  * Only regions of type EFI_RUNTIME_SERVICES_CODE need to be
  * executable, everything else can be mapped with the XN bits
@@ -131,4 +135,10 @@ asmlinkage efi_status_t efi_handle_corrupted_x18(efi_status_t s, const char *f)
 {
 	pr_err_ratelimited(FW_BUG "register x18 corrupted by EFI %s\n", f);
 	return s;
+}
+
+ssize_t efi_arch_priv_show(struct kobject *kobj,
+			   struct kobj_attribute *attr, char *buf)
+{
+	return 0;
 }
