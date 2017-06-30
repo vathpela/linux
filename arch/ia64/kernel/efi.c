@@ -538,7 +538,7 @@ efi_init (void)
 	       efi.systab->hdr.revision >> 16,
 	       efi.systab->hdr.revision & 0xffff, vendor);
 
-	if (efi_config_init(arch_tables) != 0)
+	if (efi_enumerate_config_tables() < 0)
 		return;
 
 	if (efi_config_table_valid(efi_arch_priv.palo.pa)
@@ -1368,3 +1368,7 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 
 	return str - buf;
 }
+
+efi_config_table_type_t *efi_arch_config_tables[] = {
+	NULL
+};

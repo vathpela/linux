@@ -9,6 +9,7 @@ extern struct efi_arch_priv efi_arch_priv;
 extern struct efi {
 	efi_system_table_t *systab;		/* EFI system table */
 	struct efi_arch_priv *arch_priv;	/* Architecture specific private data */
+	struct list_head config_tables;		/* Config tables */
 	unsigned int runtime_version;		/* Runtime services version */
 	unsigned long fw_vendor;		/* fw_vendor */
 	unsigned long runtime;			/* runtime table */

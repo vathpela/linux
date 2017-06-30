@@ -619,10 +619,16 @@ typedef struct {
 		.size = -1,					\
 	}
 
+typedef ssize_t (*efi_config_table_probe_t)(phys_addr_t pa, size_t max_sz);
+typedef int (*efi_config_table_init_t)(phys_addr_t pa, size_t size);
+
 typedef struct {
 	efi_guid_t guid;
 	const char *name;
 	efi_config_table_info_t *info;
+	efi_config_table_probe_t probe;
+	efi_config_table_init_t init;
+	struct list_head cfg_drv_list;
 } efi_config_table_type_t;
 
 #define EFI_SYSTEM_TABLE_SIGNATURE ((u64)0x5453595320494249ULL)

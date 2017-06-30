@@ -81,15 +81,16 @@ extern int __init efi_memmap_split_count(efi_memory_desc_t *md,
 					 struct range *range);
 extern void __init efi_memmap_insert(struct efi_memory_map *old_memmap,
 				     void *buf, struct efi_mem_range *mem);
-
-extern int efi_config_init(efi_config_table_type_t *arch_tables);
 #ifdef CONFIG_EFI_ESRT
 extern void __init efi_esrt_init(void);
 #else
 static inline void efi_esrt_init(void) { }
 #endif
-extern int efi_config_parse_tables(void *config_tables, int count, int sz,
-				   efi_config_table_type_t *arch_tables);
+
+extern efi_config_table_type_t *efi_arch_config_tables[];
+extern int __init efi_enumerate_config_tables(void);
+extern void __init efi_config_table_register(efi_config_table_type_t *drv);
+extern void __init efi_config_table_init(void);
 static inline bool
 efi_config_table_valid(efi_config_table_info_t *info)
 {

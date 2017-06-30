@@ -26,6 +26,10 @@
 
 u64 efi_system_table;
 
+struct efi_arch_priv __read_mostly efi_arch_priv = {
+	.placeholder	= EFI_INVALID_TABLE_ADDR
+};
+
 static int __init is_memory(efi_memory_desc_t *md)
 {
 	if (md->attribute & (EFI_MEMORY_WB|EFI_MEMORY_WT|EFI_MEMORY_WC))
@@ -283,3 +287,13 @@ static int __init register_gop_device(void)
 	return PTR_ERR_OR_ZERO(pd);
 }
 subsys_initcall(register_gop_device);
+
+ssize_t efi_arch_priv_show(struct kobject *kobj,
+			   struct kobj_attribute *attr, char *buf)
+{
+	return 0;
+}
+
+efi_config_table_type_t *efi_arch_config_tables[] = {
+	NULL
+};
