@@ -2,9 +2,9 @@
 #define _IA64_ASM_EFI_H
 
 struct efi_arch_priv {
-	unsigned long sal_systab;
-	unsigned long hcdp;
-	unsigned long palo_phys;
+	efi_config_table_info_t sal_systab;
+	efi_config_table_info_t hcdp;
+	efi_config_table_info_t palo;
 };
 
 #endif _IA64_ASM_EFI_H

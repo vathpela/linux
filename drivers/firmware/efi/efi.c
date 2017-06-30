@@ -36,19 +36,19 @@
 
 struct efi __read_mostly efi = {
 	.arch_priv		= &efi_arch_priv,
-	.acpi			= EFI_INVALID_TABLE_ADDR,
-	.acpi20			= EFI_INVALID_TABLE_ADDR,
-	.smbios			= EFI_INVALID_TABLE_ADDR,
-	.smbios3		= EFI_INVALID_TABLE_ADDR,
 	.fw_vendor		= EFI_INVALID_TABLE_ADDR,
 	.runtime		= EFI_INVALID_TABLE_ADDR,
 	.config_table		= EFI_INVALID_TABLE_ADDR,
-	.esrt			= EFI_INVALID_TABLE_ADDR,
-	.properties_table	= EFI_INVALID_TABLE_ADDR,
-	.mem_attr_table		= EFI_INVALID_TABLE_ADDR,
-	.rng_seed		= EFI_INVALID_TABLE_ADDR,
-	.tpm_log		= EFI_INVALID_TABLE_ADDR,
-	.mem_reserve		= EFI_INVALID_TABLE_ADDR,
+	.acpi			= INIT_EFI_CONFIG_TABLE_INFO,
+	.acpi20			= INIT_EFI_CONFIG_TABLE_INFO,
+	.smbios			= INIT_EFI_CONFIG_TABLE_INFO,
+	.smbios3		= INIT_EFI_CONFIG_TABLE_INFO,
+	.esrt			= INIT_EFI_CONFIG_TABLE_INFO,
+	.properties_table	= INIT_EFI_CONFIG_TABLE_INFO,
+	.mem_attr_table		= INIT_EFI_CONFIG_TABLE_INFO,
+	.rng_seed		= INIT_EFI_CONFIG_TABLE_INFO,
+	.tpm_log		= INIT_EFI_CONFIG_TABLE_INFO,
+	.mem_reserve		= INIT_EFI_CONFIG_TABLE_INFO,
 };
 EXPORT_SYMBOL(efi);
 
@@ -129,19 +129,19 @@ static ssize_t systab_show(struct kobject *kobj,
 	if (!kobj || !buf)
 		return -EINVAL;
 
-	if (efi.acpi20 != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "ACPI20=0x%lx\n", efi.acpi20);
-	if (efi.acpi != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "ACPI=0x%lx\n", efi.acpi);
+	if (efi_config_table_valid(&efi.acpi20))
+		str += sprintf(str, "ACPI20=%pa\n", &efi.acpi20.pa);
+	if (efi_config_table_valid(&efi.acpi))
+		str += sprintf(str, "ACPI=%pa\n", &efi.acpi.pa);
 	/*
 	 * If both SMBIOS and SMBIOS3 entry points are implemented, the
 	 * SMBIOS3 entry point shall be preferred, so we list it first to
 	 * let applications stop parsing after the first match.
 	 */
-	if (efi.smbios3 != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "SMBIOS3=0x%lx\n", efi.smbios3);
-	if (efi.smbios != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "SMBIOS=0x%lx\n", efi.smbios);
+	if (efi_config_table_valid(&efi.smbios3))
+		str += sprintf(str, "SMBIOS3=%pa\n", &efi.smbios3.pa);
+	if (efi_config_table_valid(&efi.smbios))
+		str += sprintf(str, "SMBIOS=%pa\n", &efi.smbios.pa);
 
 	str += efi_arch_priv_show(kobj, attr, buf);
 
@@ -483,7 +483,7 @@ static __init int match_config_table(efi_guid_t *guid,
 	if (table_types) {
 		for (i = 0; efi_guidcmp(table_types[i].guid, NULL_GUID); i++) {
 			if (!efi_guidcmp(*guid, table_types[i].guid)) {
-				*(table_types[i].ptr) = table;
+				table_types[i].info->pa = table;
 				if (table_types[i].name)
 					pr_cont(" %s=0x%lx ",
 						table_types[i].name, table);
@@ -532,11 +532,11 @@ int __init efi_config_parse_tables(void *config_tables, int count, int sz,
 	pr_cont("\n");
 	set_bit(EFI_CONFIG_TABLES, &efi.flags);
 
-	if (efi.rng_seed != EFI_INVALID_TABLE_ADDR) {
+	if (efi_config_table_valid(&efi.rng_seed)) {
 		struct linux_efi_random_seed *seed;
 		u32 size = 0;
 
-		seed = early_memremap(efi.rng_seed, sizeof(*seed));
+		seed = early_memremap(efi.rng_seed.pa, sizeof(*seed));
 		if (seed != NULL) {
 			size = seed->size;
 			early_memunmap(seed, sizeof(*seed));
@@ -544,7 +544,7 @@ int __init efi_config_parse_tables(void *config_tables, int count, int sz,
 			pr_err("Could not map UEFI random seed!\n");
 		}
 		if (size > 0) {
-			seed = early_memremap(efi.rng_seed,
+			seed = early_memremap(efi.rng_seed.pa,
 					      sizeof(*seed) + size);
 			if (seed != NULL) {
 				pr_notice("seeding entropy pool\n");
@@ -562,10 +562,10 @@ int __init efi_config_parse_tables(void *config_tables, int count, int sz,
 	efi_tpm_eventlog_init();
 
 	/* Parse the EFI Properties table if it exists */
-	if (efi.properties_table != EFI_INVALID_TABLE_ADDR) {
+	if (efi_config_table_valid(&efi.properties_table)) {
 		efi_properties_table_t *tbl;
 
-		tbl = early_memremap(efi.properties_table, sizeof(*tbl));
+		tbl = early_memremap(efi.properties_table.pa, sizeof(*tbl));
 		if (tbl == NULL) {
 			pr_err("Could not map Properties table!\n");
 			return -ENOMEM;
@@ -1045,7 +1045,7 @@ static int update_efi_random_seed(struct notifier_block *nb,
 	if (!kexec_in_progress)
 		return NOTIFY_DONE;
 
-	seed = memremap(efi.rng_seed, sizeof(*seed), MEMREMAP_WB);
+	seed = memremap(efi.rng_seed.pa, sizeof(*seed), MEMREMAP_WB);
 	if (seed != NULL) {
 		size = min(seed->size, EFI_RANDOM_SEED_SIZE);
 		memunmap(seed);
@@ -1053,7 +1053,7 @@ static int update_efi_random_seed(struct notifier_block *nb,
 		pr_err("Could not map UEFI random seed!\n");
 	}
 	if (size > 0) {
-		seed = memremap(efi.rng_seed, sizeof(*seed) + size,
+		seed = memremap(efi.rng_seed.pa, sizeof(*seed) + size,
 				MEMREMAP_WB);
 		if (seed != NULL) {
 			seed->size = size;
@@ -1072,7 +1072,7 @@ static struct notifier_block efi_random_seed_nb = {
 
 static int register_update_efi_random_seed(void)
 {
-	if (efi.rng_seed == EFI_INVALID_TABLE_ADDR)
+	if (!efi_config_table_valid(&efi.rng_seed))
 		return 0;
 	return register_reboot_notifier(&efi_random_seed_nb);
 }

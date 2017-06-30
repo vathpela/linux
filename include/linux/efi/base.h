@@ -7,22 +7,22 @@
 extern struct efi_arch_priv efi_arch_priv;
 
 extern struct efi {
-	efi_system_table_t *systab;	/* EFI system table */
-	struct efi_arch_priv *arch_priv;/* Architecture specific private data */
-	unsigned int runtime_version;	/* Runtime services version */
-	unsigned long acpi;		/* ACPI table  (IA64 ext 0.71) */
-	unsigned long acpi20;		/* ACPI table  (ACPI 2.0) */
-	unsigned long smbios;		/* SMBIOS table (32 bit entry point) */
-	unsigned long smbios3;		/* SMBIOS table (64 bit entry point) */
-	unsigned long fw_vendor;	/* fw_vendor */
-	unsigned long runtime;		/* runtime table */
-	unsigned long config_table;	/* config tables */
-	unsigned long esrt;		/* ESRT table */
-	unsigned long properties_table;	/* properties table */
-	unsigned long mem_attr_table;	/* memory attributes table */
-	unsigned long rng_seed;		/* UEFI firmware random seed */
-	unsigned long tpm_log;		/* TPM2 Event Log table */
-	unsigned long mem_reserve;	/* Linux EFI memreserve table */
+	efi_system_table_t *systab;		/* EFI system table */
+	struct efi_arch_priv *arch_priv;	/* Architecture specific private data */
+	unsigned int runtime_version;		/* Runtime services version */
+	unsigned long fw_vendor;		/* fw_vendor */
+	unsigned long runtime;			/* runtime table */
+	unsigned long config_table;		/* config tables */
+	efi_config_table_info_t acpi;		/* ACPI table  (IA64 ext 0.71) */
+	efi_config_table_info_t acpi20;		/* ACPI table  (ACPI 2.0) */
+	efi_config_table_info_t smbios;		/* SMBIOS table (32 bit entry point) */
+	efi_config_table_info_t smbios3;	/* SMBIOS table (64 bit entry point) */
+	efi_config_table_info_t esrt;		/* ESRT table */
+	efi_config_table_info_t properties_table;/* properties table */
+	efi_config_table_info_t mem_attr_table;	/* memory attributes table */
+	efi_config_table_info_t rng_seed;	/* UEFI firmware random seed */
+	efi_config_table_info_t tpm_log;	/* TPM2 Event Log table */
+	efi_config_table_info_t mem_reserve;	/* Linux EFI memreserve table */
 	efi_get_time_t *get_time;
 	efi_set_time_t *set_time;
 	efi_get_wakeup_time_t *get_wakeup_time;

@@ -59,9 +59,7 @@ static efi_system_table_t efi_systab __initdata;
 
 struct efi_arch_priv __read_mostly efi_arch_priv = {
 #ifdef CONFIG_X86_UV
-	.uv_systab	= EFI_INVALID_TABLE_ADDR,
-#else
-	.placeholder	= EFI_INVALID_TABLE_ADDR,
+	.uv_systab	= INIT_EFI_CONFIG_TABLE_INFO,
 #endif
 };
 
@@ -1062,9 +1060,9 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 	char *str = buf;
 
 #ifdef CONFIG_X86_UV
-	if (efi.arch_priv->uv_systab != EFI_INVALID_TABLE_ADDR)
-		str += sprintf(str, "UV_SYSTAB=0x%lx\n",
-			       efi.arch_priv->uv_systab);
+	if (efi_config_table_valid(&efi.arch_priv->uv_systab))
+		str += sprintf(str, "UV_SYSTAB=%pa\n",
+			       &efi.arch_priv->uv_systab.pa);
 #endif
 
 	return str - buf;

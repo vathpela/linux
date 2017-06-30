@@ -25,13 +25,13 @@ int __init efi_memattr_init(void)
 {
 	efi_memory_attributes_table_t *tbl;
 
-	if (efi.mem_attr_table == EFI_INVALID_TABLE_ADDR)
+	if (!efi_config_table_valid(&efi.mem_attr_table))
 		return 0;
 
-	tbl = early_memremap(efi.mem_attr_table, sizeof(*tbl));
+	tbl = early_memremap(efi.mem_attr_table.pa, sizeof(*tbl));
 	if (!tbl) {
-		pr_err("Failed to map EFI Memory Attributes table @ 0x%lx\n",
-		       efi.mem_attr_table);
+		pr_err("Failed to map EFI Memory Attributes table @ %pa\n",
+		       &efi.mem_attr_table.pa);
 		return -ENOMEM;
 	}
 
@@ -42,7 +42,7 @@ int __init efi_memattr_init(void)
 	}
 
 	tbl_size = sizeof(*tbl) + tbl->num_entries * tbl->desc_size;
-	memblock_reserve(efi.mem_attr_table, tbl_size);
+	memblock_reserve(efi.mem_attr_table.pa, tbl_size);
 	set_bit(EFI_MEM_ATTR, &efi.flags);
 
 unmap:
@@ -138,7 +138,8 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 	efi_memory_attributes_table_t *tbl;
 	int i, ret;
 
-	if (tbl_size <= sizeof(*tbl))
+	if (!efi_config_table_valid(&efi.mem_attr_table) ||
+	    tbl_size <= sizeof(*tbl))
 		return 0;
 
 	/*
@@ -150,10 +151,10 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 	if (WARN_ON(!efi_enabled(EFI_MEMMAP)))
 		return 0;
 
-	tbl = memremap(efi.mem_attr_table, tbl_size, MEMREMAP_WB);
+	tbl = memremap(efi.mem_attr_table.pa, tbl_size, MEMREMAP_WB);
 	if (!tbl) {
-		pr_err("Failed to map EFI Memory Attributes table @ 0x%lx\n",
-		       efi.mem_attr_table);
+		pr_err("Failed to map EFI Memory Attributes table @ %pa\n",
+		       &efi.mem_attr_table.pa);
 		return -ENOMEM;
 	}
 

@@ -46,13 +46,13 @@
 #define EFI_DEBUG	0
 
 struct efi_arch_priv __read_mostly efi_arch_priv = {
-	.palo_phys	= EFI_INVALID_TABLE_ADDR,
-	.sal_systab	= EFI_INVALID_TABLE_ADDR,
-	.hcdp		= EFI_INVALID_TABLE_ADDR,
+	.palo		= INIT_EFI_CONFIG_TABLE_INFO,
+	.sal_systab	= INIT_EFI_CONFIG_TABLE_INFO,
+	.hcdp		= INIT_EFI_CONFIG_TABLE_INFO,
 };
 
 static __initdata efi_config_table_type_t arch_tables[] = {
-	{PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID, "PALO", &efi_arch_priv.palo_phys},
+	{PROCESSOR_ABSTRACTION_LAYER_OVERWRITE_GUID, "PALO", &efi_arch_priv.palo},
 	{HCDP_TABLE_GUID, "HCDP", &efi_arch_priv.hcdp},
 	{SAL_SYSTEM_TABLE_GUID, "SALsystab", &efi_arch_priv.sal_systab},
 	{NULL_GUID, NULL, 0},
@@ -541,8 +541,8 @@ efi_init (void)
 	if (efi_config_init(arch_tables) != 0)
 		return;
 
-	if (efi_arch_priv.palo_phys != EFI_INVALID_TABLE_ADDR)
-		handle_palo(efi_arch_priv.palo_phys);
+	if (efi_config_table_valid(efi_arch_priv.palo.pa)
+		handle_palo(efi_arch_priv.palo.pa);
 
 	runtime = __va(efi.systab->runtime);
 	efi.get_time = phys_get_time;
@@ -1358,13 +1358,13 @@ ssize_t efi_arch_priv_show(struct kobject *kobj,
 {
 	char *str = buf;
 
-	if (efi.arch_priv->sal_systab != EFI_INVALID_TABLE_ADDR)
+	if (efi_config_table_valid(&efi.arch_priv->sal_systab))
 		str += sprintf(str, "SAL_SYSTAB=0x%lx\n",
-			       efi.arch_priv->sal_systab);
+			       efi.arch_priv->sal_systab.pa);
 
-	if (efi.arch_priv->hcdp != EFI_INVALID_TABLE_ADDR)
+	if (efi_config_table_valid(&efi.arch_priv->hcdp))
 		str += sprintf(str, "HCDP=0x%lx\n",
-			       efi.arch_priv->hcdp);
+			       efi.arch_priv->hcdp.pa);
 
 	return str - buf;
 }

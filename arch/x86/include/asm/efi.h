@@ -256,7 +256,7 @@ static inline bool efi_reboot_required(void)
 
 struct efi_arch_priv {
 #ifdef CONFIG_X86_UV
-	unsigned long uv_systab;
+	efi_config_table_info_t uv_systab;
 #else
 	u32 placeholder;
 #endif

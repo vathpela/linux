@@ -146,7 +146,7 @@ prepare_add_efi_setup_data(struct boot_params *params,
 	esd->fw_vendor = efi.fw_vendor;
 	esd->runtime = efi.runtime;
 	esd->tables = efi.config_table;
-	esd->smbios = efi.smbios;
+	esd->smbios = efi.smbios.pa;
 
 	sd->type = SETUP_EFI;
 	sd->len = sizeof(struct efi_setup_data);

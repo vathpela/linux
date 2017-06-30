@@ -609,9 +609,20 @@ typedef struct {
 } efi_config_table_t;
 
 typedef struct {
+	phys_addr_t pa;
+	ssize_t size;
+} efi_config_table_info_t;
+
+#define INIT_EFI_CONFIG_TABLE_INFO				\
+	{							\
+		.pa = (phys_addr_t) EFI_INVALID_TABLE_ADDR,	\
+		.size = -1,					\
+	}
+
+typedef struct {
 	efi_guid_t guid;
 	const char *name;
-	unsigned long *ptr;
+	efi_config_table_info_t *info;
 } efi_config_table_type_t;
 
 #define EFI_SYSTEM_TABLE_SIGNATURE ((u64)0x5453595320494249ULL)

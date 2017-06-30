@@ -214,7 +214,7 @@ static inline int esrt_table_exists(void)
 {
 	if (!efi_enabled(EFI_CONFIG_TABLES))
 		return 0;
-	if (efi.esrt == EFI_INVALID_TABLE_ADDR)
+	if (!efi_config_table_valid(&efi.esrt))
 		return 0;
 	return 1;
 }
@@ -249,7 +249,7 @@ void __init efi_esrt_init(void)
 	if (!esrt_table_exists())
 		return;
 
-	rc = efi_mem_desc_lookup(efi.esrt, &md);
+	rc = efi_mem_desc_lookup(efi.esrt.pa, &md);
 	if (rc < 0 ||
 	    (!(md.attribute & EFI_MEMORY_RUNTIME) &&
 	     md.type != EFI_BOOT_SERVICES_DATA &&
@@ -259,14 +259,14 @@ void __init efi_esrt_init(void)
 	}
 
 	max = efi_mem_desc_end(&md);
-	if (max < efi.esrt) {
-		pr_err("EFI memory descriptor is invalid. (esrt: %p max: %p)\n",
-		       (void *)efi.esrt, (void *)max);
+	if (max < efi.esrt.pa) {
+		pr_err("EFI memory descriptor is invalid. (esrt: %pa max: %p)\n",
+		       &efi.esrt.pa, (void *)max);
 		return;
 	}
 
 	size = sizeof(*esrt);
-	max -= efi.esrt;
+	max -= efi.esrt.pa;
 
 	if (max < size) {
 		pr_err("ESRT header doesn't fit on single memory map entry. (size: %zu max: %zu)\n",
@@ -274,9 +274,9 @@ void __init efi_esrt_init(void)
 		return;
 	}
 
-	va = early_memremap(efi.esrt, size);
+	va = early_memremap(efi.esrt.pa, size);
 	if (!va) {
-		pr_err("early_memremap(%p, %zu) failed.\n", (void *)efi.esrt,
+		pr_err("early_memremap(%pa, %zu) failed.\n", &efi.esrt.pa,
 		       size);
 		return;
 	}
@@ -324,7 +324,7 @@ void __init efi_esrt_init(void)
 
 	size += entries_size;
 
-	esrt_data = (phys_addr_t)efi.esrt;
+	esrt_data = efi.esrt.pa;
 	esrt_data_size = size;
 
 	end = esrt_data + size;

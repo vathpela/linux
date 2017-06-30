@@ -191,14 +191,17 @@ EXPORT_SYMBOL_GPL(uv_bios_set_legacy_vga_target);
 #ifdef CONFIG_EFI
 void uv_bios_init(void)
 {
+	phys_addr_t pa = efi.arch_priv->uv_systab.pa;
+
 	uv_systab = NULL;
-	if ((efi.arch_priv->uv_systab == EFI_INVALID_TABLE_ADDR) ||
-	    !efi.arch_priv->uv_systab || efi_runtime_disabled()) {
+
+	if (!efi_config_table_valid(&efi.arch_priv->uv_systab) ||
+	    !pa || efi_runtime_disabled()) {
 		pr_crit("UV: UVsystab: missing\n");
 		return;
 	}
 
-	uv_systab = ioremap(efi.arch_priv->uv_systab, sizeof(struct uv_systab));
+	uv_systab = ioremap(pa, sizeof(struct uv_systab));
 	if (!uv_systab || strncmp(uv_systab->signature, UV_SYSTAB_SIG, 4)) {
 		pr_err("UV: UVsystab: bad signature!\n");
 		iounmap(uv_systab);
@@ -210,7 +213,7 @@ void uv_bios_init(void)
 		int size = uv_systab->size;
 
 		iounmap(uv_systab);
-		uv_systab = ioremap(efi.arch_priv->uv_systab, size);
+		uv_systab = ioremap(pa, size);
 		if (!uv_systab) {
 			pr_err("UV: UVsystab: ioremap(%d) failed!\n", size);
 			return;

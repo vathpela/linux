@@ -633,8 +633,8 @@ void __init dmi_scan_machine(void)
 		 * have the 64-bit entry point, but fail to decode it, fall
 		 * back to the legacy one (if available)
 		 */
-		if (efi.smbios3 != EFI_INVALID_TABLE_ADDR) {
-			p = dmi_early_remap(efi.smbios3, 32);
+		if (efi_config_table_valid(&efi.smbios3)) {
+			p = dmi_early_remap(efi.smbios3.pa, 32);
 			if (p == NULL)
 				goto error;
 			memcpy_fromio(buf, p, 32);
@@ -645,14 +645,14 @@ void __init dmi_scan_machine(void)
 				return;
 			}
 		}
-		if (efi.smbios == EFI_INVALID_TABLE_ADDR)
+		if (efi_config_table_valid(&efi.smbios))
 			goto error;
 
 		/* This is called as a core_initcall() because it isn't
 		 * needed during early boot.  This also means we can
 		 * iounmap the space when we're done with it.
 		 */
-		p = dmi_early_remap(efi.smbios, 32);
+		p = dmi_early_remap(efi.smbios.pa, 32);
 		if (p == NULL)
 			goto error;
 		memcpy_fromio(buf, p, 32);

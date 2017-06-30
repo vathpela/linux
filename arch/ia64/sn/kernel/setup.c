@@ -323,10 +323,10 @@ sn_scan_pcdp(void)
 	struct pcdp_interface_pci if_pci;
 	extern struct efi efi;
 
-	if (efi.arch_priv->hcdp == EFI_INVALID_TABLE_ADDR)
+	if (!efi_config_table_valid(&efi.arch_priv->hcdp))
 		return;		/* no hcdp/pcdp table */
 
-	pcdp = __va(efi.arch_priv->hcdp);
+	pcdp = __va(efi.arch_priv->hcdp.pa);
 
 	if (pcdp->rev < 3)
 		return;		/* only support PCDP (rev >= 3) */

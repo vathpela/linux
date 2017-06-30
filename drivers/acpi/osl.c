@@ -202,9 +202,9 @@ acpi_physical_address __init acpi_os_get_root_pointer(void)
 		return pa;
 
 	if (efi_enabled(EFI_CONFIG_TABLES)) {
-		if (efi.acpi20 != EFI_INVALID_TABLE_ADDR)
+		if (efi_config_table_valid(&efi.acpi20))
 			return efi.acpi20;
-		if (efi.acpi != EFI_INVALID_TABLE_ADDR)
+		if (efi_config_table_valid(&efi.acpi))
 			return efi.acpi;
 		pr_err(PREFIX "System description tables not found\n");
 	} else if (IS_ENABLED(CONFIG_ACPI_LEGACY_TABLES_LOOKUP)) {

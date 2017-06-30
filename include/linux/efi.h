@@ -90,6 +90,14 @@ static inline void efi_esrt_init(void) { }
 #endif
 extern int efi_config_parse_tables(void *config_tables, int count, int sz,
 				   efi_config_table_type_t *arch_tables);
+static inline bool
+efi_config_table_valid(efi_config_table_info_t *info)
+{
+	if (info->pa == EFI_INVALID_TABLE_ADDR)
+		return false;
+	return true;
+}
+
 extern u64 efi_get_iobase (void);
 extern int efi_mem_type(unsigned long phys_addr);
 extern u64 efi_mem_attributes (unsigned long phys_addr);

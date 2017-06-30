@@ -92,11 +92,11 @@ efi_setup_pcdp_console(char *cmdline)
 	int i, serial = 0;
 	int rc = -ENODEV;
 
-	if (efi.arch_priv->hcdp == EFI_INVALID_TABLE_ADDR)
+	if (!efi_config_table_valid(efi.arch_priv->hcdp))
 		return -ENODEV;
 
-	pcdp = early_memremap(efi.arch_priv->hcdp, 4096);
-	printk(KERN_INFO "PCDP: v%d at 0x%lx\n", pcdp->rev, efi.arch_priv->hcdp);
+	pcdp = early_memremap(efi.arch_priv->hcdp.pa, 4096);
+	printk(KERN_INFO "PCDP: v%d at 0x%lx\n", pcdp->rev, efi.arch_priv->hcdp.pa);
 
 	if (strstr(cmdline, "console=hcdp")) {
 		if (pcdp->rev < 3)
