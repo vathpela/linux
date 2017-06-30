@@ -35,7 +35,7 @@
 #include <linux/memblock.h>
 #include <linux/ioport.h>
 #include <linux/pci.h>
-#include <linux/efi-bgrt.h>
+#include <linux/efi/bgrt.h>
 #include <linux/serial_core.h>
 
 #include <asm/e820/api.h>

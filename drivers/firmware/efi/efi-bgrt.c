@@ -17,7 +17,7 @@
 #include <linux/init.h>
 #include <linux/acpi.h>
 #include <linux/efi.h>
-#include <linux/efi-bgrt.h>
+#include <linux/efi/bgrt.h>
 
 struct acpi_table_bgrt bgrt_tab;
 size_t bgrt_image_size;

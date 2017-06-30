@@ -18,7 +18,7 @@
 #include <linux/acpi.h>
 #include <linux/cpumask.h>
 #include <linux/efi.h>
-#include <linux/efi-bgrt.h>
+#include <linux/efi/bgrt.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/irqdomain.h>

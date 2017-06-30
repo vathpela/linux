@@ -13,7 +13,7 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/sysfs.h>
-#include <linux/efi-bgrt.h>
+#include <linux/efi/bgrt.h>
 
 static void *bgrt_image;
 static struct kobject *bgrt_kobj;

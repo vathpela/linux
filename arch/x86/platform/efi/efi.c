@@ -34,7 +34,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/efi.h>
-#include <linux/efi-bgrt.h>
+#include <linux/efi/bgrt.h>
 #include <linux/export.h>
 #include <linux/memblock.h>
 #include <linux/slab.h>
