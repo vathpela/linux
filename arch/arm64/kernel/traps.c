@@ -166,6 +166,26 @@ static int __die(const char *str, int err, struct pt_regs *regs)
 	static int die_counter;
 	int ret;
 
+	/* Amuse the user. */
+	printk(
+"                      ___\n"
+"                  . -^   `--,\n"
+"                 /# =========`-_\n"
+"                /# (--====___====\\\n"
+"               /#   .- --.  . --.|\n"
+"              /##   |  * ) (   * ),\n"
+"              |##   \\    /\\ \\   / |\n"
+"              |###   ---   \\ ---  |\n"
+"              |####      ___)    #|\n"
+"              |######           ##|\n"
+"               \\##### ---------- /\n"
+"                \\####           (\n"
+"                 `\\###          |\n"
+"                   \\###         |\n"
+"                    \\##        |\n"
+"                     \\###.    .)\n"
+"                      `======/\n");
+
 	pr_emerg("Internal error: %s: %x [#%d]" S_PREEMPT S_SMP "\n",
 		 str, err, ++die_counter);
 
