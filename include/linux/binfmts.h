@@ -48,6 +48,9 @@ struct linux_binprm {
 #ifdef __alpha__
 	unsigned int taso:1;
 #endif
+#ifdef __x86_64__
+	unsigned int rstack:1;
+#endif
 	unsigned int recursion_depth; /* only for search_binary_handler() */
 	struct file * file;
 	struct cred *cred;	/* new credentials */

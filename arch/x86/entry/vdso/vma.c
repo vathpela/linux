@@ -14,6 +14,7 @@
 #include <linux/elf.h>
 #include <linux/cpu.h>
 #include <linux/ptrace.h>
+#include <linux/binfmts.h>
 #include <asm/pvclock.h>
 #include <asm/vgtod.h>
 #include <asm/proto.h>
@@ -137,6 +138,9 @@ static const struct vm_special_mapping vvar_mapping = {
 	.name = "[vvar]",
 	.fault = vvar_fault,
 };
+static const struct vm_special_mapping rstack_mapping = {
+	.name = "[rstack]",
+};
 
 /*
  * Add vdso and vvar mappings to current process.
@@ -198,6 +202,57 @@ up_fail:
 }
 
 #ifdef CONFIG_X86_64
+
+DEFINE_VVAR(unsigned long, vdso_rstack);
+
+#define RSTACK_SIZE 0x800000
+
+int map_rstack(struct linux_binprm *bprm)
+{
+	unsigned long addr, start, end;
+	unsigned int offset = 0;
+	struct mm_struct *mm = current->mm;
+	struct vm_area_struct *vma;
+	int ret = 0;
+
+	if (!bprm->rstack)
+		return 0;
+
+	if (down_write_killable(&mm->mmap_sem))
+		return -EINTR;
+
+	end = PAGE_ALIGN(min(mm->start_code, mm->start_data));
+	end -= PAGE_SIZE;
+	start = end - RSTACK_SIZE - RSTACK_SIZE;
+
+	/* If we don't have 16M above 4G, we can't do this. */
+	if (start < 0x100000000UL)
+		goto up_fail;
+
+	offset = get_random_int() % (((end - start) >> PAGE_SHIFT) + 1);
+
+	addr = get_unmapped_area(NULL, start, end - start, 0, 0);
+	if (IS_ERR_VALUE(addr)) {
+		ret = addr;
+		goto up_fail;
+	}
+
+	/*
+	 * MAYWRITE to allow gdb to COW and set breakpoints
+	 */
+	vma = _install_special_mapping(mm, addr, end - start, VM_STACK_FLAGS,
+				       &rstack_mapping);
+	if (IS_ERR(vma)) {
+		ret = PTR_ERR(vma);
+		goto up_fail;
+	}
+
+	vdso_rstack = addr + end - offset;
+up_fail:
+	up_write(&mm->mmap_sem);
+	return ret;
+}
+
 /*
  * Put the vdso above the (randomized) stack with another randomized
  * offset.  This way there is no hole in the middle of address space.
@@ -288,10 +343,18 @@ static int load_vdso32(void)
 #ifdef CONFIG_X86_64
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 {
+	int rc;
+
 	if (!vdso64_enabled)
 		return 0;
 
-	return map_vdso_randomized(&vdso_image_64);
+	rc = map_vdso_randomized(&vdso_image_64);
+	if (rc < 0)
+		return rc;
+
+	if (!uses_interp)
+		rc = map_rstack(bprm);
+	return rc;
 }
 
 #ifdef CONFIG_COMPAT
@@ -302,6 +365,7 @@ int compat_arch_setup_additional_pages(struct linux_binprm *bprm,
 	if (test_thread_flag(TIF_X32)) {
 		if (!vdso64_enabled)
 			return 0;
+
 		return map_vdso_randomized(&vdso_image_x32);
 	}
 #endif

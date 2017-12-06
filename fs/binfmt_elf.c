@@ -814,6 +814,10 @@ static int load_elf_binary(struct linux_binprm *bprm)
 				executable_stack = EXSTACK_DISABLE_X;
 			break;
 
+		case PT_GNU_RSTACK:
+			bprm->rstack = 1;
+			break;
+
 		case PT_LOPROC ... PT_HIPROC:
 			retval = arch_elf_pt_proc(&loc->elf_ex, elf_ppnt,
 						  bprm->file, false,
@@ -1119,6 +1123,13 @@ static int load_elf_binary(struct linux_binprm *bprm)
 
 	set_binfmt(&elf_format);
 
+	/* N.B. passed_fileno might not be initialized? */
+	current->mm->end_code = end_code;
+	current->mm->start_code = start_code;
+	current->mm->start_data = start_data;
+	current->mm->end_data = end_data;
+	current->mm->start_stack = bprm->p;
+
 #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
 	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
 	if (retval < 0)
@@ -1129,12 +1140,6 @@ static int load_elf_binary(struct linux_binprm *bprm)
 			  load_addr, interp_load_addr);
 	if (retval < 0)
 		goto out;
-	/* N.B. passed_fileno might not be initialized? */
-	current->mm->end_code = end_code;
-	current->mm->start_code = start_code;
-	current->mm->start_data = start_data;
-	current->mm->end_data = end_data;
-	current->mm->start_stack = bprm->p;
 
 	if ((current->flags & PF_RANDOMIZE) && (randomize_va_space > 1)) {
 		current->mm->brk = current->mm->start_brk =

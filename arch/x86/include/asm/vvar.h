@@ -44,6 +44,7 @@ extern char __vvar_page;
 
 /* DECLARE_VVAR(offset, type, name) */
 
+DECLARE_VVAR(0, unsigned long, vdso_rstack)
 DECLARE_VVAR(128, struct vsyscall_gtod_data, vsyscall_gtod_data)
 
 #undef DECLARE_VVAR

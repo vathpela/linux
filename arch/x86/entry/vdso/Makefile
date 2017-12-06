@@ -18,6 +18,7 @@ VDSO32-$(CONFIG_IA32_EMULATION)	:= y
 
 # files to link into the vdso
 vobjs-y := vdso-note.o vclock_gettime.o vgetcpu.o
+vobjs-$(CONFIG_X86_64)		+= vrstack.o
 
 # files to link into kernel
 obj-y				+= vma.o
