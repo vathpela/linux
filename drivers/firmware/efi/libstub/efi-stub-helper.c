@@ -848,6 +848,76 @@ char *efi_convert_cmdline(efi_system_table_t *sys_table_arg,
 }
 
 /*
+ * See if there's a shortage of EFI variable storage, and if so attempt to
+ * trigger the firmware's Reclaim() function by creating a variable that's
+ * bigger than our typical Boot#### variables.
+ */
+void efi_attempt_efivar_reclaim(efi_system_table_t *systab)
+{
+	efi_status_t status;
+	u32 attributes = EFI_VARIABLE_NON_VOLATILE \
+			 | EFI_VARIABLE_BOOTSERVICE_ACCESS \
+			 | EFI_VARIABLE_RUNTIME_ACCESS;
+	u64 maximum = 0, remaining = 0, max_variable = 0;
+	static efi_guid_t guid = EFI_GUID(0x880ef544, 0x6cbd, 0xa6b4,
+					  0xa4, 0x8d,
+					  0xbd, 0x82, 0x87, 0x5f, 0x1c, 0xf3);
+	uint32_t *data;
+	unsigned long nr_pages, size;
+	efi_physical_addr_t efi_addr = 0;
+
+	status = efi_call_runtime(query_variable_info, attributes,
+				  &maximum, &remaining, &max_variable);
+	if (status != EFI_SUCCESS)
+		return;
+
+	/*
+	 * The typical boot variable is between 100 bytes and 2kB, so I've
+	 * just picked an arbitrary pretty even value bigger than that.
+	 */
+	if (maximum > 4096 && remaining > maximum - 4096)
+		return;
+
+	if (!maximum)
+		maximum = 4096;
+	if (!max_variable)
+		max_variable = maximum;
+	size = min(max_variable, 4096ULL);
+	nr_pages = size / EFI_PAGE_SIZE;
+
+	/*
+	 * ExitBootServices() will clean this up.
+	 */
+	status = efi_call_early(allocate_pages,
+				EFI_ALLOCATE_ADDRESS, EFI_LOADER_DATA,
+				nr_pages, &efi_addr);
+	if (status != EFI_SUCCESS)
+		return;
+
+	data = (void *)efi_addr;
+	memset(data, 0, size);
+
+	/*
+	 * We don't actually care if there's a failure here, we just want to
+	 * trigger the side effects.
+	 */
+	status = efi_call_runtime(set_variable,
+				  "GarbageCollectionForcingToken",
+				  &guid, attributes, size, data);
+	if (status != EFI_SUCCESS) {
+		pr_efi_err(systab,
+			   "Could not set variable to trigger reclaim\n");
+		return;
+	}
+	status = efi_call_runtime(set_variable,
+				  "GarbageCollectionForcingToken",
+				  &guid, attributes, 0, data);
+	if (status != EFI_SUCCESS)
+		pr_efi_err(systab,
+			   "Could not remove variable to trigger reclaim\n");
+}
+
+/*
  * Handle calling ExitBootServices according to the requirements set out by the
  * spec.  Obtains the current memory map, and returns that info after calling
  * ExitBootServices.  The client must specify a function to perform any

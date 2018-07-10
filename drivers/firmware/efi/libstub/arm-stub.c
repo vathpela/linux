@@ -264,6 +264,7 @@ unsigned long efi_entry(void *handle, efi_system_table_t *sys_table,
 	}
 
 	install_memreserve_table(sys_table);
+	efi_attempt_efivar_reclaim(sys_table);
 
 	new_fdt_addr = fdt_addr;
 	status = allocate_new_fdt_and_exit_boot(sys_table, handle,

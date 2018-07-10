@@ -725,6 +725,8 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 	if (status != EFI_SUCCESS)
 		return status;
 
+	efi_attempt_efivar_reclaim(sys_table);
+
 	/* Might as well exit boot services now */
 	status = efi_exit_boot_services(sys_table, handle, &map, &priv,
 					exit_boot_func);
