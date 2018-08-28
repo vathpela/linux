@@ -852,7 +852,7 @@ char *efi_convert_cmdline(efi_system_table_t *sys_table_arg,
  * trigger the firmware's Reclaim() function by creating a variable that's
  * bigger than our typical Boot#### variables.
  */
-void efi_attempt_efivar_reclaim(efi_system_table_t *systab)
+void efi_attempt_efivar_reclaim(efi_system_table_t *sys_table)
 {
 	efi_status_t status;
 	u32 attributes = EFI_VARIABLE_NON_VOLATILE \
@@ -862,7 +862,7 @@ void efi_attempt_efivar_reclaim(efi_system_table_t *systab)
 	static efi_guid_t guid = EFI_GUID(0x880ef544, 0x6cbd, 0xa6b4,
 					  0xa4, 0x8d,
 					  0xbd, 0x82, 0x87, 0x5f, 0x1c, 0xf3);
-	uint32_t *data;
+	char *data;
 	unsigned long nr_pages, size;
 	efi_physical_addr_t efi_addr = 0;
 
@@ -870,6 +870,10 @@ void efi_attempt_efivar_reclaim(efi_system_table_t *systab)
 				  &maximum, &remaining, &max_variable);
 	if (status != EFI_SUCCESS)
 		return;
+
+        pr_efi_err_status(sys_table, maximum, "<-- maximum\n");
+        pr_efi_err_status(sys_table, remaining, "<-- remaining\n");
+        pr_efi_err_status(sys_table, max_variable, "<-- max_variable\n");
 
 	/*
 	 * The typical boot variable is between 100 bytes and 2kB, so I've
@@ -905,16 +909,17 @@ void efi_attempt_efivar_reclaim(efi_system_table_t *systab)
 				  "GarbageCollectionForcingToken",
 				  &guid, attributes, size, data);
 	if (status != EFI_SUCCESS) {
-		pr_efi_err(systab,
-			   "Could not set variable to trigger reclaim\n");
+                pr_efi_err_status(sys_table, status,
+                                  "Could not set variable to trigger reclaim\n");
 		return;
 	}
 	status = efi_call_runtime(set_variable,
 				  "GarbageCollectionForcingToken",
 				  &guid, attributes, 0, data);
-	if (status != EFI_SUCCESS)
-		pr_efi_err(systab,
-			   "Could not remove variable to trigger reclaim\n");
+	if (status != EFI_SUCCESS) {
+                pr_efi_err_status(sys_table, status,
+                                  "Could not remove variable to trigger reclaim\n");
+        }
 }
 
 /*

@@ -417,6 +417,8 @@ struct boot_params *make_boot_params(struct efi_config *c)
 		return NULL;
 	}
 
+	efi_attempt_efivar_reclaim(sys_table);
+
 	status = efi_low_alloc(sys_table, 0x4000, 1,
 			       (unsigned long *)&boot_params);
 	if (status != EFI_SUCCESS) {
@@ -724,8 +726,6 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 	status = allocate_e820(boot_params, &e820ext, &e820ext_size);
 	if (status != EFI_SUCCESS)
 		return status;
-
-	efi_attempt_efivar_reclaim(sys_table);
 
 	/* Might as well exit boot services now */
 	status = efi_exit_boot_services(sys_table, handle, &map, &priv,

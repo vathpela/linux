@@ -34,6 +34,22 @@ extern int __pure is_quiet(void);
 
 #define pr_efi_err(sys_table, msg) efi_printk(sys_table, "EFI stub: ERROR: "msg)
 
+#define pr_efi_err_status(sys_table, status, msg) ({            \
+                char errcode_[17];                              \
+                char hex_[] = "0123456789abcdef";               \
+                efi_status_t status_ = status;                  \
+                int i_;                                         \
+                efi_printk(sys_table, "EFI stub: ERROR 0x");    \
+                for (i_ = 15; i_ >= 0; i_--) {                  \
+                        unsigned char x_ = status_ & 0xfUL;     \
+                        status_ >>= 4;                          \
+                        errcode_[i_] = hex_[x_];                \
+                }                                               \
+                errcode_[16] = 0;                               \
+                efi_printk(sys_table, errcode_);                \
+                efi_printk(sys_table, ": "msg);                 \
+        })
+
 void efi_char16_printk(efi_system_table_t *, efi_char16_t *);
 
 unsigned long get_dram_base(efi_system_table_t *sys_table_arg);
