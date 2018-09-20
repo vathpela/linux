@@ -89,7 +89,7 @@ static efi_status_t
 __gop_query32(efi_system_table_t *sys_table_arg,
 	      struct efi_graphics_output_protocol_32 *gop32,
 	      struct efi_graphics_output_mode_info **info,
-	      unsigned long *size, u64 *fb_base)
+	      unsigned long *size, u64 *fb_base, u32 *mode_num)
 {
 	struct efi_graphics_output_protocol_mode_32 *mode;
 	efi_graphics_output_protocol_query_mode query_mode;
@@ -106,6 +106,7 @@ __gop_query32(efi_system_table_t *sys_table_arg,
 		return status;
 
 	*fb_base = mode->frame_buffer_base;
+	*mode_num = mode->mode;
 	return status;
 }
 
@@ -115,6 +116,7 @@ setup_gop32(efi_system_table_t *sys_table_arg, struct screen_info *si,
 {
 	struct efi_graphics_output_protocol_32 *gop32, *first_gop;
 	unsigned long nr_gops;
+	u32 mode_num;
 	u16 width, height;
 	u32 pixels_per_scan_line;
 	u32 ext_lfb_base;
@@ -148,7 +150,7 @@ setup_gop32(efi_system_table_t *sys_table_arg, struct screen_info *si,
 			conout_found = true;
 
 		status = __gop_query32(sys_table_arg, gop32, &info, &size,
-				       &current_fb_base);
+				       &current_fb_base, &mode_num);
 		if (status == EFI_SUCCESS && (!first_gop || conout_found) &&
 		    info->pixel_format != PIXEL_BLT_ONLY) {
 			/*
@@ -182,6 +184,8 @@ setup_gop32(efi_system_table_t *sys_table_arg, struct screen_info *si,
 	/* EFI framebuffer */
 	si->orig_video_isVGA = VIDEO_TYPE_EFI;
 
+	si->efi_gop_mode_high = (mode_num & 0xff00) >> 16;
+	si->efi_gop_mode_low = (mode_num & 0xff);
 	si->lfb_width = width;
 	si->lfb_height = height;
 	si->lfb_base = fb_base;
@@ -207,7 +211,7 @@ static efi_status_t
 __gop_query64(efi_system_table_t *sys_table_arg,
 	      struct efi_graphics_output_protocol_64 *gop64,
 	      struct efi_graphics_output_mode_info **info,
-	      unsigned long *size, u64 *fb_base)
+	      unsigned long *size, u64 *fb_base, u32 *mode_num)
 {
 	struct efi_graphics_output_protocol_mode_64 *mode;
 	efi_graphics_output_protocol_query_mode query_mode;
@@ -224,6 +228,7 @@ __gop_query64(efi_system_table_t *sys_table_arg,
 		return status;
 
 	*fb_base = mode->frame_buffer_base;
+	*mode_num = mode->mode;
 	return status;
 }
 
@@ -233,6 +238,7 @@ setup_gop64(efi_system_table_t *sys_table_arg, struct screen_info *si,
 {
 	struct efi_graphics_output_protocol_64 *gop64, *first_gop;
 	unsigned long nr_gops;
+	u32 mode_num;
 	u16 width, height;
 	u32 pixels_per_scan_line;
 	u32 ext_lfb_base;
@@ -266,7 +272,7 @@ setup_gop64(efi_system_table_t *sys_table_arg, struct screen_info *si,
 			conout_found = true;
 
 		status = __gop_query64(sys_table_arg, gop64, &info, &size,
-				       &current_fb_base);
+				       &current_fb_base, &mode_num);
 		if (status == EFI_SUCCESS && (!first_gop || conout_found) &&
 		    info->pixel_format != PIXEL_BLT_ONLY) {
 			/*
@@ -300,6 +306,8 @@ setup_gop64(efi_system_table_t *sys_table_arg, struct screen_info *si,
 	/* EFI framebuffer */
 	si->orig_video_isVGA = VIDEO_TYPE_EFI;
 
+	si->efi_gop_mode_high = (mode_num & 0xff00) >> 16;
+	si->efi_gop_mode_low = (mode_num & 0xff);
 	si->lfb_width = width;
 	si->lfb_height = height;
 	si->lfb_base = fb_base;

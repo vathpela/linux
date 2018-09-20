@@ -331,12 +331,23 @@ efifb_attr_decl(height, "%u");
 efifb_attr_decl(width, "%u");
 efifb_attr_decl(depth, "%u");
 
+static ssize_t gop_mode_show(struct device *dev,
+			     struct device_attribute *attr,
+			     char *buf)
+{
+	return sprintf(buf, "%04hx%04hx\n",
+		       screen_info.efi_gop_mode_high,
+		       screen_info.efi_gop_mode_low);
+}
+static DEVICE_ATTR_RO(gop_mode);
+
 static struct attribute *efifb_attrs[] = {
 	&dev_attr_base.attr,
 	&dev_attr_linelength.attr,
 	&dev_attr_width.attr,
 	&dev_attr_height.attr,
 	&dev_attr_depth.attr,
+	&dev_attr_gop_mode.attr,
 	NULL
 };
 ATTRIBUTE_GROUPS(efifb);
