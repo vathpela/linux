@@ -6,8 +6,9 @@
 
 #ifdef CONFIG_ACPI_BGRT
 
-void efi_bgrt_init(struct acpi_table_header *table);
+void acpi_bgrt_init(struct acpi_table_header *table);
 int __init acpi_parse_bgrt(struct acpi_table_header *table);
+extern void __init efi_bgrt_init(void);
 
 /* The BGRT data itself; only valid if bgrt_image != NULL. */
 extern size_t bgrt_image_size;
@@ -15,7 +16,8 @@ extern struct acpi_table_bgrt bgrt_tab;
 
 #else /* !CONFIG_ACPI_BGRT */
 
-static inline void efi_bgrt_init(struct acpi_table_header *table) {}
+static inline void efi_bgrt_init(void) {}
+static inline void acpi_bgrt_init(struct acpi_table_header *table) {}
 static inline int __init acpi_parse_bgrt(struct acpi_table_header *table)
 {
 	return 0;

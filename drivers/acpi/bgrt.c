@@ -83,7 +83,7 @@ static const struct attribute_group bgrt_attribute_group = {
 
 int __init acpi_parse_bgrt(struct acpi_table_header *table)
 {
-	efi_bgrt_init(table);
+	acpi_bgrt_init(table);
 	return 0;
 }
 

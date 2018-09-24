@@ -45,7 +45,7 @@ struct screen_info {
 	__u16 vesa_attributes;	/* 0x34 */
 	__u32 capabilities;     /* 0x36 */
 	__u32 ext_lfb_base;	/* 0x3a */
-	__u16 efi_gop_mode_high	/* 0x3e */
+	__u16 efi_gop_mode_high;/* 0x3e */
 } __attribute__((packed));
 
 #define VIDEO_TYPE_MDA		0x10	/* Monochrome Text Display	*/
