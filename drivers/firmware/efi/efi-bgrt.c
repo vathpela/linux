@@ -36,44 +36,56 @@ static inline int bgrt_table_exists(void)
 	return 1;
 }
 
+static ssize_t get_max_size(phys_addr_t addr)
+{
+	size_t max = NULL;
+	efi_memory_desc_t md;
+	int rc;
+
+	rc = efi_mem_desc_lookup(addr, &md);
+	if (rc < 0 ||
+	    (!(md.attribute & EFI_MEMORY_RUNTIME) &&
+	     md.type != EFI_BOOT_SERVICES_DATA &&
+	     md.type != EFI_RUNTIME_SERVICES_DATA)) {
+		return -1;
+	}
+
+	max = efi_mem_desc_end(&md);
+	if (max < addr) {
+		pr_err("EFI memory descriptor is invalid. (addr: %p max: %p)\n",
+		       (void *)addr, (void *)max);
+		return -1;
+	}
+
+	return max - addr;
+}
+
 void __init efi_bgrt_init(void)
 {
-        efi_memory_desc_t md;
 	int rc;
 	void *va;
 	phys_addr_t end;
-	size_t size, max;
+	size_t size, bgrt_size;
+	ssize_t max;
 	struct bmp_header bmph;
+	struct acpi_table_header bgrt;
 
 	pr_debug("bgrt-init: loading.\n");
 	if (!bgrt_table_exists())
 		return;
 
-	rc = efi_mem_desc_lookup(efi.bgrt, &md);
-	if (rc < 0 ||
-	    (!(md.attribute & EFI_MEMORY_RUNTIME) &&
-	     md.type != EFI_BOOT_SERVICES_DATA &&
-	     md.type != EFI_RUNTIME_SERVICES_DATA)) {
-		pr_warn("bgrt header is not in the memory map.\n");
-		return;
-	}
-
-	max = efi_mem_desc_end(&md);
-	if (max < efi.bgrt) {
-		pr_err("EFI memory descriptor is invalid. (bgrt: %p max: %p)\n",
-		       (void *)efi.bgrt, (void *)max);
+	max = get_max_size(efi.bgrt);
+	if (max < 0) {
+		pr_warn("bgrt header is not in a valid memory map.\n");
 		return;
 	}
 
 	size = sizeof(bgrt_tab);
-	max -= efi.esrt;
-
 	if (max < size) {
 		pr_err("BGRT header doesn't fit on single memory map entry. (size: %zu max: %zu)\n",
 		       size, max);
 		return;
 	}
-
 
 	va = early_memremap(efi.bgrt, size);
 	if (!va) {
@@ -85,9 +97,21 @@ void __init efi_bgrt_init(void)
 	memcpy(&bgrt, va, sizeof(bgrt));
 	early_memunmap(va, size);
 
-	size += bgrt.length;
+	if (max < bgrt.length) {
+		pr_err("BGRT ACPI table length doesn't fit on single memory map entry. (size: %zu max: %zu)\n",
+		       bgrt.length, max);
+		return;
+	}
 
-	acpi_bgrt_init(efi.bgrt);
+	bgrt_size = bgrt.length;
+        va = early_memremap(efi.bgrt, bgrt_size);
+	if (!va) {
+		pr_err("early_memremap(%p, %zu) failed.\n", (void *)efi.bgrt,
+		       bgrt_size);
+		return;
+	}
+
+	acpi_bgrt_init((struct acpi_table_header *)va);
 
 	pr_debug("bgrt-init: loaded.\n");
 }
@@ -148,7 +172,9 @@ void __init acpi_bgrt_init(struct acpi_table_header *table)
 		goto out;
 	}
 	bgrt_image_size = bmp_header.size;
-        efi_reserve_mem_region(bgrt->image_address, bgrt_image_size);
+	efi_reserve_mem_region(table, table->length);
+	efi_mem_reserve(table, table->length);
+	efi_reserve_mem_region(bgrt->image_address, bgrt_image_size);
 	efi_mem_reserve(bgrt->image_address, bgrt_image_size);
 
 	return;
