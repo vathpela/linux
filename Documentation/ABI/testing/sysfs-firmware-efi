@@ -28,3 +28,6 @@ Description:	Displays the physical addresses of all EFI Configuration
 		versions are always printed first, i.e. ACPI20 comes
 		before ACPI.
 Users:		dmidecode
+
+What:		/sys/bus/platform/drivers/efi-framebuffer/base
+Date:		Oct 2018
