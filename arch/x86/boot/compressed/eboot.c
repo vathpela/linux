@@ -701,6 +701,13 @@ static efi_status_t exit_boot_func(efi_system_table_t *sys_table_arg,
 	return EFI_SUCCESS;
 }
 
+#ifdef CONFIG_ARCH_EFI
+static inline efi_status_t exit_boot(struct boot_params *boot_params,
+				     void *handle)
+{
+	return EFI_SUCCESS;
+}
+#else
 static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 {
 	unsigned long map_sz, key, desc_size, buff_size;
@@ -740,6 +747,7 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 
 	return EFI_SUCCESS;
 }
+#endif /* CONFIG_ARCH_EFI */
 
 /*
  * On success we return a pointer to a boot_params structure, and NULL
@@ -814,23 +822,25 @@ efi_main(struct efi_config *c, struct boot_params *boot_params)
 		goto fail;
 	}
 
-	/*
-	 * If the kernel isn't already loaded at the preferred load
-	 * address, relocate it.
-	 */
-	if (hdr->pref_address != hdr->code32_start) {
-		unsigned long bzimage_addr = hdr->code32_start;
-		status = efi_relocate_kernel(sys_table, &bzimage_addr,
-					     hdr->init_size, hdr->init_size,
-					     hdr->pref_address,
-					     hdr->kernel_alignment);
-		if (status != EFI_SUCCESS) {
-			efi_printk(sys_table, "efi_relocate_kernel() failed!\n");
-			goto fail;
-		}
+	if (!IS_ENABLED(CONFIG_ARCH_EFI)) {
+		/*
+		 * If the kernel isn't already loaded at the preferred load
+		 * address, relocate it.
+		 */
+		if (hdr->pref_address != hdr->code32_start) {
+			unsigned long bzimage_addr = hdr->code32_start;
+			status = efi_relocate_kernel(sys_table, &bzimage_addr,
+						     hdr->init_size, hdr->init_size,
+						     hdr->pref_address,
+						     hdr->kernel_alignment);
+			if (status != EFI_SUCCESS) {
+				efi_printk(sys_table, "efi_relocate_kernel() failed!\n");
+				goto fail;
+			}
 
-		hdr->pref_address = hdr->code32_start;
-		hdr->code32_start = bzimage_addr;
+			hdr->pref_address = hdr->code32_start;
+			hdr->code32_start = bzimage_addr;
+		}
 	}
 
 	status = exit_boot(boot_params, handle);
