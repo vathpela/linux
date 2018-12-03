@@ -622,6 +622,13 @@ static efi_status_t exit_boot_func(struct efi_boot_memmap *map,
 	return EFI_SUCCESS;
 }
 
+#ifdef CONFIG_ARCH_EFI
+static inline efi_status_t exit_boot(struct boot_params *boot_params,
+				     void *handle)
+{
+	return EFI_SUCCESS;
+}
+#else
 static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 {
 	unsigned long map_sz, key, desc_size, buff_size;
@@ -660,6 +667,7 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 
 	return EFI_SUCCESS;
 }
+#endif /* CONFIG_ARCH_EFI */
 
 /*
  * On success, we return the address of startup_32, which has potentially been
@@ -711,10 +719,11 @@ unsigned long efi_main(efi_handle_t handle,
 			     hdr->kernel_alignment);
 	buffer_end = buffer_start + hdr->init_size;
 
-	if ((buffer_start < LOAD_PHYSICAL_ADDR)				     ||
-	    (IS_ENABLED(CONFIG_X86_32) && buffer_end > KERNEL_IMAGE_SIZE)    ||
-	    (IS_ENABLED(CONFIG_X86_64) && buffer_end > MAXMEM_X86_64_4LEVEL) ||
-	    (image_offset == 0)) {
+	if (!IS_ENABLED(CONFIG_ARCH_EFI) &&
+	    ((buffer_start < LOAD_PHYSICAL_ADDR)			      ||
+	     (IS_ENABLED(CONFIG_X86_32) && buffer_end > KERNEL_IMAGE_SIZE)    ||
+	     (IS_ENABLED(CONFIG_X86_64) && buffer_end > MAXMEM_X86_64_4LEVEL) ||
+	     (image_offset == 0))) {
 		extern char _bss[];
 
 		status = efi_relocate_kernel(&bzimage_addr,
