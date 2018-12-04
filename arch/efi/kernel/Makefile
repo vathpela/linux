@@ -7,3 +7,5 @@
 KCOV_INSTRUMENT                := n
 
 clean-files :=
+
+obj-y = bs.o
