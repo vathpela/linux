@@ -114,6 +114,8 @@ dbg_packagename=$packagename-dbg
 
 if [ "$ARCH" = "um" ] ; then
 	packagename=user-mode-linux-$version
+elif [ "$ARCH" = "efi" ] ; then
+	packagename=efi-mode-linux-$version
 fi
 
 # Not all arches have the same installed path in debian
@@ -143,6 +145,12 @@ if [ "$ARCH" = "um" ] ; then
 	cp System.map "$tmpdir/usr/lib/uml/modules/$version/System.map"
 	cp $KCONFIG_CONFIG "$tmpdir/usr/share/doc/$packagename/config"
 	gzip "$tmpdir/usr/share/doc/$packagename/config"
+elif [ "$ARCH" = "efi" ] ; then
+	mkdir -p "$tmpdir/usr/lib/eml/modules/$version" "$tmpdir/boot/efi/EFI/BOOT" "$tmpdir/usr/share/doc/$packagename"
+	$MAKE linux
+	cp System.map "$tmpdir/usr/lib/eml/modules/$version/System.map"
+	cp $KCONFIG_CONFIG "$tmpdir/usr/share/doc/$packagename/config"
+	gzip "$tmpdir/usr/share/doc/$packagename/config"
 else
 	cp System.map "$tmpdir/boot/System.map-$version"
 	cp $KCONFIG_CONFIG "$tmpdir/boot/config-$version"
@@ -162,6 +170,9 @@ if is_enabled CONFIG_MODULES; then
 	rm -f "$tmpdir/lib/modules/$version/source"
 	if [ "$ARCH" = "um" ] ; then
 		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/uml/modules/$version/"
+		rmdir "$tmpdir/lib/modules/$version"
+	elif [ "$ARCH" = "efi" ] ; then
+		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/eml/modules/$version/"
 		rmdir "$tmpdir/lib/modules/$version"
 	fi
 	if [ -n "$BUILD_DEBUG" ] ; then
@@ -208,7 +219,7 @@ EOF
 	chmod 755 "$tmpdir/DEBIAN/$script"
 done
 
-if [ "$ARCH" != "um" ]; then
+if [ "$ARCH" != "um" -a "$ARCH" != "efi" ]; then
 	if is_enabled CONFIG_MODULES; then
 		deploy_kernel_headers debian/linux-headers
 		create_package linux-headers-$version debian/linux-headers

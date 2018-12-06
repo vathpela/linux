@@ -1,3 +1,4 @@
+objtool-y += arch/$(HEADER_ARCH)/
 objtool-y += arch/$(SRCARCH)/
 
 objtool-y += weak.o
@@ -19,6 +20,7 @@ objtool-y += str_error_r.o
 objtool-y += librbtree.o
 
 CFLAGS += -I$(srctree)/tools/lib
+CFLAGS += -I$(srctree)/arch/$(HEADER_ARCH)/include
 
 $(OUTPUT)libstring.o: ../lib/string.c FORCE
 	$(call rule_mkdir)

@@ -97,6 +97,8 @@ sourcename=$KDEB_SOURCENAME
 
 if [ "$ARCH" = "um" ] ; then
 	packagename=user-mode-linux
+elif [ "$ARCH" = "efi" ] ; then
+	packagename=efi-mode-linux
 else
 	packagename=linux-image
 fi

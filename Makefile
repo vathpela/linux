@@ -1946,6 +1946,8 @@ PHONY += checkstack kernelrelease kernelversion image_name
 # that $(SUBARCH) doesn't work here.
 ifeq ($(ARCH), um)
 CHECKSTACK_ARCH := $(SUBARCH)
+else ifeq ($(ARCH), efi)
+CHECKSTACK_ARCH := $(SUBARCH)
 else
 CHECKSTACK_ARCH := $(ARCH)
 endif
