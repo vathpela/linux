@@ -297,7 +297,7 @@ xtags()
 }
 
 # Support um (which uses SUBARCH)
-if [ "${ARCH}" = "um" ]; then
+if [ "${ARCH}" = "um" -o "${ARCH}" = "efi" ]; then
 	if [ "$SUBARCH" = "i386" ]; then
 		archinclude=x86
 	elif [ "$SUBARCH" = "x86_64" ]; then

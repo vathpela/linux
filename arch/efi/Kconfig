@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright 2018 Peter Jones <pjones@redhat.com>
+
+menu "EFI-Mode-specific options"
+
+config ARCH_EFI
+	bool
+	default y
+	select NO_HZ_FULL
+	select MMU
+
+source "arch/$(HEADER_ARCH)/efi/Kconfig"
+
+endmenu

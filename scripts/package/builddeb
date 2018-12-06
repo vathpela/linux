@@ -46,6 +46,8 @@ dbg_packagename=$packagename-dbg
 
 if [ "$ARCH" = "um" ] ; then
 	packagename=user-mode-linux-$version
+elif [ "$ARCH" = "efi" ] ; then
+	packagename=efi-mode-linux-$version
 fi
 
 # Not all arches have the same installed path in debian
@@ -77,6 +79,12 @@ if [ "$ARCH" = "um" ] ; then
 	cp System.map "$tmpdir/usr/lib/uml/modules/$version/System.map"
 	cp $KCONFIG_CONFIG "$tmpdir/usr/share/doc/$packagename/config"
 	gzip "$tmpdir/usr/share/doc/$packagename/config"
+elif [ "$ARCH" = "efi" ] ; then
+	mkdir -p "$tmpdir/usr/lib/eml/modules/$version" "$tmpdir/boot/efi/EFI/BOOT" "$tmpdir/usr/share/doc/$packagename"
+	$MAKE linux
+	cp System.map "$tmpdir/usr/lib/eml/modules/$version/System.map"
+	cp $KCONFIG_CONFIG "$tmpdir/usr/share/doc/$packagename/config"
+	gzip "$tmpdir/usr/share/doc/$packagename/config"
 else
 	cp System.map "$tmpdir/boot/System.map-$version"
 	cp $KCONFIG_CONFIG "$tmpdir/boot/config-$version"
@@ -96,6 +104,9 @@ if grep -q '^CONFIG_MODULES=y' $KCONFIG_CONFIG ; then
 	rm -f "$tmpdir/lib/modules/$version/source"
 	if [ "$ARCH" = "um" ] ; then
 		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/uml/modules/$version/"
+		rmdir "$tmpdir/lib/modules/$version"
+	elif [ "$ARCH" = "efi" ] ; then
+		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/eml/modules/$version/"
 		rmdir "$tmpdir/lib/modules/$version"
 	fi
 	if [ -n "$BUILD_DEBUG" ] ; then
@@ -118,7 +129,7 @@ if grep -q '^CONFIG_MODULES=y' $KCONFIG_CONFIG ; then
 	fi
 fi
 
-if [ "$ARCH" != "um" ]; then
+if [ "$ARCH" != "um" -a "$ARCH" != "efi" ]; then
 	$MAKE headers_check KBUILD_SRC=
 	$MAKE headers_install KBUILD_SRC= INSTALL_HDR_PATH="$libc_headers_dir/usr"
 fi
@@ -173,7 +184,7 @@ mkdir -p "$destdir"
 ln -sf "/usr/src/linux-headers-$version" "$kernel_headers_dir/lib/modules/$version/build"
 rm -f "$objtree/debian/hdrsrcfiles" "$objtree/debian/hdrobjfiles"
 
-if [ "$ARCH" != "um" ]; then
+if [ "$ARCH" != "um" -a "$ARCH" != "efi" ]; then
 	create_package "$kernel_headers_packagename" "$kernel_headers_dir"
 	create_package "$libc_headers_packagename" "$libc_headers_dir"
 fi

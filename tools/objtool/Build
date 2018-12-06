@@ -1,3 +1,4 @@
+objtool-y += arch/$(HEADER_ARCH)/
 objtool-y += arch/$(SRCARCH)/
 objtool-y += builtin-check.o
 objtool-y += builtin-orc.o
@@ -12,6 +13,7 @@ objtool-y += libstring.o
 objtool-y += str_error_r.o
 
 CFLAGS += -I$(srctree)/tools/lib
+CFLAGS += -I$(srctree)/arch/$(HEADER_ARCH)/include
 
 $(OUTPUT)libstring.o: ../lib/string.c FORCE
 	$(call rule_mkdir)

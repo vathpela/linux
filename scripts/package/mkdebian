@@ -102,6 +102,8 @@ set_debarch
 
 if [ "$ARCH" = "um" ] ; then
 	packagename=user-mode-linux-$version
+elif [ "$ARCH" = "efi" ] ; then
+	packagename=efi-mode-linux-$version
 fi
 
 email=${DEBEMAIL-$EMAIL}
