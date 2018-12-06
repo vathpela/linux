@@ -16,6 +16,7 @@ override SRCARCH=$(HEADER_ARCH)
 HOST_DIR := arch/$(HEADER_ARCH)
 
 core-y += $(ARCH_DIR)/kernel/ \
+	  $(ARCH_DIR)/drivers/ \
 	  $(HOST_DIR)/efi/
 
 include $(HOST_DIR)/Makefile

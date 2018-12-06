@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menu "EFI-Mode Character Devices"
+
+config NULL_CHAN
+	bool "null channel support"
+	help
+	  This option enables support for attaching EFI-Mode consoles and serial
+	  lines to a device similar to /dev/null.  Data written to it disappears
+	  and there is never any data to be read.
+
+config NOCONFIG_CHAN
+	bool
+	default !(NULL_CHAN)
+
+endmenu
+
+menu "EFI-Mode Network Devices"
+	depends on NET
+
+# EFI-Mode virtual driver
+config ARCH_EFI_NET
+	bool "Virtual network device"
+	help
+	  While the EFI-Mode port cannot directly talk to any physical
+	  hardware devices, this choice and the following transport options
+	  provide one or more virtual network devices through which the EFI-Mode
+	  kernels can talk to each other, the host, and with the host's help,
+	  machines on the outside world.
+
+	  If you'd like to be able to enable networking in the EFI-Mode
+	  linux environment, say Y; otherwise say N.
+
+endmenu
