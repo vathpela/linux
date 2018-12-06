@@ -2,14 +2,73 @@
 #
 # Copyright 2018 Peter Jones <pjones@redhat.com>
 
-menu "EFI-Mode-specific options"
-
 config ARCH_EFI
 	bool
-	default y
-	select NO_HZ_FULL
+	default n
+	# because we want it
+	select ACPI
+	# because we don't want to live long enough to need it
+	select ARCH_NO_SWAP
+	# wouldn't be ARCH=efi without also supporting EFI and the stub
+	select EFI
+	select EFI_STUB
+	# this is how we display things
+	select FB_EFI
+	# this is how we boot a real kernel
+	select KEXEC_FILE
+	# this is how we manage memory
 	select MMU
+	# this is how we schedule
+	select NO_HZ_FULL
+	# this is because CONFIG_ACPI requires it
+	select PCI
 
+config MODULES
+	def_bool !ARCH_EFI
+	help
+	  Just say 'N'
+
+config MODULE_UNLOAD
+	def_bool !ARCH_EFI
+	help
+	  Just say 'N'
+
+config MODULE_FORCE_UNLOAD
+	def_bool !ARCH_EFI
+	help
+	  Just say 'N'
+
+config PCCARD
+	def_tristate !ARCH_EFI
+	help
+	  Just say 'N'
+
+config PCI_ENDPOINT
+	def_bool !ARCH_EFI
+	help
+	  Just say 'N'
+
+config SOUND
+	def_tristate !ARCH_EFI
+	depends on !ARCH_EFI
+	help
+	  Just say 'N'
+
+#config USB
+#	def_tristate !ARCH_EFI
+#	depends on !ARCH_EFI
+#	help
+#	  Just say 'N'
+#
+# config
+# 	def_tristate !ARCH_EFI
+# 	def_bool !ARCH_EFI
+# 	depends on !ARCH_EFI
+# 	help
+# 	  Just say 'N'
+ 
 source "arch/$(HEADER_ARCH)/efi/Kconfig"
 
-endmenu
+source "drivers/firmware/Kconfig"
+
+source "arch/efi/drivers/Kconfig"
