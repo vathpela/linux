@@ -1,0 +1,143 @@
+Some notes about EFI as a kernel architecture ("make ARCH=efi bzImage").
+ARCH=efi is a time sharing system that runs the Linux kernel and userland at
+the same time as the system's UEFI firmware.  It does this by scheduling the
+EFI firmware code as a kernel thread, switching the interrupt handlers out
+when it schedules the task, and using wrappers around UEFI code to write
+storage, networking, and terminal drivers.
+
+Here's some more details in terrible outline form:
+
+- What our linux kernel looks like
+  - built as an EFI binary (just like a normal EFI-supporting kernel)
+  - startup:
+    - we need our own version of arch/x86/kernel/setup.c's setup_arch(), to
+      set up our memory arena using allocations from UEFI's
+      BS->AllocatePages() instead of using the entire response from
+      BS->GetMemoryMap() as our memory map.  The setup is something like
+      this pseudo-code:
+      - efi_mode_linux_setup():
+        if (unlikely(!setup_is_done)) {
+          /*
+           * Allocate linux's entire arena.  Try to get a big allocation below
+           * 4GB, and if necessary some pages above 4GB (but the ones above 4GB
+           * probably have to be filled with bounce buffers below 4GB :/ )
+           *
+           * We use this instead of the enumeration we normally do in
+           * efi_main()
+           */
+          memory_map = BS->GetMemoryMap();
+          arena = BS->AllocatePages(something we picked from memory_map);
+          make_kernel_page_tables(arena);
+          /*
+           * register our timer callback
+           */
+          event = BS->CreateEvent(EVT_TIMER|EVT_NOTIFY_SIGNAL,
+                                  efi_kthread_egress, context);
+          setup_is_done = 1;
+          efi_kthread_egress(); // see below
+        }
+    - note that technically we could run the kernel in UEFI's identity map
+      (i.e. use the EFI allocator and leave EFI's pagetables intact while
+      the kernel runs), and only need to swap page tables for *userland*
+      tasks.  This might be the best way to go initially.
+
+  - What our Linux runtime looks like:
+    - Quick summary: We build with CONFIG_NO_HZ_FULL, and make a kernel
+      thread for EFI's runtime.  Every time that thread is scheduled, we
+      swap out all of our state
+      during our idle loop.  When we switch to EFI, we set a timer.  When
+      that timer fires, we switch back to the kernel.  Each time we switch
+      we have to replace the interrupt handlers we're using, and switch the
+      mask back to the other side's interrupts.  In the kernel we run with
+      most interrupts disabled - basically we just want traps on our
+      scheduler timer, page faults, system calls, that sort of thing - not
+      device drivers.  When our HZ timer fires, we switch back to EFI and
+      set its timer again.  Note that we may not want to do it *every* time;
+      we probably want to use HZ for our scheduler and only re-inter EFI
+      every Nth time it fires.  We'll have to do some trial and error and
+      figure it out.
+
+      Here's some pseudo-code below to illustrate how parts of it will work:
+      - efi_kthread_egress():
+        saved_tpl = BS->RaiseTPL(TPL_HIGH_LEVEL); // this disables interrupts
+        switch_to_kernel_page_tables();
+        switch_to_kernel_irq_handlers();
+        switch_to_kernel_timer_state();
+        enable_kernel_interrupts(); // timers, but also e.g. page faults
+        kernel_timer = set_timer(HZ, efi_kthread_ingress);
+
+      - efi_kthread_ingress():
+        clear_timer(kernel_timer);
+        disable_kernel_interrupts();
+        switch_to_efi_timer_state();
+        switch_to_efi_irq_handlers();
+        switch_to_efi_page_tables();
+        BS->RestoreTPL(saved_tpl); // this enables interrupts
+        for_each_set_bit(i, interrupts)
+          int(i);
+        interrupts = 0;
+        BS->SetTimer(event, TimerRelative, HZ);
+
+      - switch_to_kernel_irq_handlers():
+        - store the table of handlers
+        - replace all the handlers with specific ones for stuff we've enabled
+          (i.e. page fault, sys call)
+        - for everything else, something like:
+          void efi_kthread_schedule(int this_interrupt_number)
+          {
+            set_bit(interrupts, this_interrupt_number);
+            if (!timer_is_set(timer)) {
+              now = readtsc();
+              set_timer(now - ROUND_UP(now, $SOME_THRESHOLD),
+                        efi_kthread_ingress);
+            }
+          }
+
+    - efi_call_*() all do the same thing efi_kthread_ingress() is doing.  The
+      page table parts are how that code *already* works, so we're adding
+      the timer and TPL setup and tear-down.
+
+    - we need some device drivers
+      - EFI_GRAPHICS_OUTPUT_PROTOCOL for fbcon - I think efifb may work as
+        written, actually.  We may want to set up a version that uses
+        GOP->Blt(), but probably not, since that requires switching to efi
+        runtime.  It's probably better just to stick with a raw fbcon
+        framebuffer.
+      - EFI_SIMPLE_TEXT_INPUT_PROTOCOL / EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL
+        for text input (when we decide we want to listen for text input.)
+      - EFI_BLOCK_IO2_PROTOCOL / EFI_DISK_IO2_PROTOCOL for disk access and
+        enumeration.
+        - We can start by using these directly, though that may not be great
+          performance-wise.  Our stretch goals can include to moving to use
+          these protocols only for enumeration, and use
+          EFI_ATA_PASS_THRU_PROTOCOL / EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL /
+          EFI_SD_MMC_PASS_THRU_PROTOCOL / EFI_EXT_SCSI_PASS_THRU_PROTOCOL
+          when we can.  Those basically all look similar to linux's
+          scsi-generic - it's just command pass-thru to the device.  But we
+          may as well just use BlockIo to start with and see if/when we need
+          to bother doing that.
+      - Still to figure out: networking.  Probably we need to write a driver
+        to use EFI_MANAGED_NETWORK_PROTOCOL
+      - We probably need to plumb through some TPM driver stuff from
+        EFI_TCG2_PROTOCOL as well
+
+    - the kexec() syscall needs to know how to boot our new kernel.  I think
+      this is mostly actually what we've already got, but I'm sure we'll have
+      to fix something.  We will need to teach it to use shim to verify
+      instead of switching to its own keyrings etc., and we'll have to do
+      some tpm2 extend and logging work.
+
+- It's probably not useful for anyone else *yet*, but the code is on
+  github[0], and is more or less exactly far enough along that on x86_64 you
+  can do 'make ARCH=efi defconfig bzImage' and get a binary out, with no
+  chance that it yet works for any purpose at all.  Also note that this
+  branch gets force-pushed fairly often, and is[2] branched from the efi/next
+  tree[1], which also force-pushes fairly frequently.
+
+  [0] https://github.com/vathpela/linux/tree/efi-mode-linux
+  [1] https://git.kernel.org/pub/scm/linux/kernel/git/efi/efi.git/log/?h=next
+  [2] *was*.  Because I'm changing arch/x86/Kconfig I'm temporarily working
+      against Linus's tree to avoid having to do huge fix-ups later.
+
+# vim:filetype=mail:tw=78
+
