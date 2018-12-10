@@ -189,6 +189,33 @@ typedef struct {
 	u8 sets_to_zero;
 } efi_time_cap_t;
 
+/*
+ * Types and defines for Timers, Events, and TPL
+ */
+
+typedef enum {
+	EfiTimerCancel,
+	EfiTimerPeriodic,
+	EfiTimerRelative
+} efi_timer_delay_t;
+
+typedef void *efi_event_t;
+typedef void (*efi_event_notify_t)(efi_event_t, void *);
+
+#define EFI_EVT_TIMER				0x80000000
+#define EFI_EVT_RUNTIME				0x40000000
+#define EFI_EVT_NOTIFY_WAIT			0x00000100
+#define EFI_EVT_NOTIFY_SIGNAL			0x00000200
+#define EFI_EVT_SIGNAL_EXIT_BOOT_SERVICES	0x00000201
+#define EFI_EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE	0x60000202
+
+typedef unsigned long efi_tpl_t;
+
+#define EFI_TPL_APPLICATION	0x00004
+#define EFI_TPL_CALLBACK	0x00008
+#define EFI_TPL_NOTIFY		0x00010
+#define EFI_TPL_HIGH_LEVEL	0x11111
+
 typedef struct {
 	efi_table_hdr_t hdr;
 	u32 raise_tpl;
@@ -290,8 +317,8 @@ typedef struct {
  */
 typedef struct {
 	efi_table_hdr_t hdr;
-	void *raise_tpl;
-	void *restore_tpl;
+	efi_tpl_t (*raise_tpl)(efi_tpl_t);
+	efi_tpl_t (*restore_tpl)(efi_tpl_t);
 	efi_status_t (*allocate_pages)(int, int, unsigned long,
 				       efi_physical_addr_t *);
 	efi_status_t (*free_pages)(efi_physical_addr_t, unsigned long);
@@ -299,12 +326,13 @@ typedef struct {
 				       unsigned long *, u32 *);
 	efi_status_t (*allocate_pool)(int, unsigned long, void **);
 	efi_status_t (*free_pool)(void *);
-	void *create_event;
-	void *set_timer;
-	void *wait_for_event;
-	void *signal_event;
-	void *close_event;
-	void *check_event;
+	efi_status_t (*create_event)(u32, efi_tpl_t, efi_event_notify_t,
+                                     void *, efi_event_t *);
+	efi_status_t (*set_timer)(efi_event_t, efi_timer_delay_t, u64);
+	efi_status_t (*wait_for_event)(unsigned long, efi_event_t, unsigned long *);
+	efi_status_t (*signal_event)(efi_event_t);
+	efi_status_t (*close_event)(efi_event_t);
+	efi_status_t (*check_event)(efi_event_t);
 	void *install_protocol_interface;
 	void *reinstall_protocol_interface;
 	void *uninstall_protocol_interface;
