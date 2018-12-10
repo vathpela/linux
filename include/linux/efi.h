@@ -199,6 +199,33 @@ typedef struct {
 typedef union efi_boot_services efi_boot_services_t;
 
 /*
+ * Types and defines for efi events, tpl, and timers
+ */
+typedef void *efi_event_t;
+/* Note that notifications won't work in mixed mode */
+typedef void (__efiapi *efi_event_notify_t)(efi_event_t, void *);
+
+#define EFI_TPL_APPLICATION	4
+#define EFI_TPL_CALLBACK	8
+#define EFI_TPL_NOTIFY		16
+#define EFI_TPL_HIGH_LEVEL	31
+
+typedef unsigned long efi_tpl_t;
+
+typedef enum {
+	EfiTimerCancel,
+	EfiTimerPeriodic,
+	EfiTimerRelative
+} EFI_TIMER_DELAY;
+
+#define EFI_EVT_TIMER				0x80000000U
+#define EFI_EVT_RUNTIME				0x40000000U
+#define EFI_EVT_NOTIFY_WAIT			0x00000100U
+#define EFI_EVT_NOTIFY_SIGNAL			0x00000200U
+#define EFI_EVT_SIGNAL_EXIT_BOOT_SERVICES	0x00000201U
+#define EFI_EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE	0x60000202U
+
+/*
  * Types and defines for EFI ResetSystem
  */
 #define EFI_RESET_COLD 0

@@ -168,15 +168,6 @@ struct efi_boot_memmap {
 
 typedef struct efi_generic_dev_path efi_device_path_protocol_t;
 
-typedef void *efi_event_t;
-/* Note that notifications won't work in mixed mode */
-typedef void (__efiapi *efi_event_notify_t)(efi_event_t, void *);
-
-#define EFI_EVT_TIMER		0x80000000U
-#define EFI_EVT_RUNTIME		0x40000000U
-#define EFI_EVT_NOTIFY_WAIT	0x00000100U
-#define EFI_EVT_NOTIFY_SIGNAL	0x00000200U
-
 /**
  * efi_set_event_at() - add event to events array
  *
@@ -195,17 +186,6 @@ void efi_set_event_at(efi_event_t *events, size_t idx, efi_event_t event)
 	else
 		((u32 *)events)[idx] = (u32)(unsigned long)event;
 }
-
-#define EFI_TPL_APPLICATION	4
-#define EFI_TPL_CALLBACK	8
-#define EFI_TPL_NOTIFY		16
-#define EFI_TPL_HIGH_LEVEL	31
-
-typedef enum {
-	EfiTimerCancel,
-	EfiTimerPeriodic,
-	EfiTimerRelative
-} EFI_TIMER_DELAY;
 
 /*
  * EFI Boot Services table
