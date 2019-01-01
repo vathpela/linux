@@ -626,6 +626,7 @@ static efi_status_t exit_boot_func(struct efi_boot_memmap *map,
 static inline efi_status_t exit_boot(struct boot_params *boot_params,
 				     void *handle)
 {
+	efi_printk(sys_table, "Something called exit_boot but we're here without it.\n");
 	return EFI_SUCCESS;
 }
 #else
@@ -726,6 +727,7 @@ unsigned long efi_main(efi_handle_t handle,
 	     (image_offset == 0))) {
 		extern char _bss[];
 
+		efi_printk("This is code that shouldn't be run on ARCH=efi\n");
 		status = efi_relocate_kernel(&bzimage_addr,
 					     (unsigned long)_bss - bzimage_addr,
 					     hdr->init_size,
