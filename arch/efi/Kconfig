@@ -21,7 +21,7 @@ config ARCH_EFI
 	# this is how we schedule
 	select NO_HZ_FULL
 	# this is because CONFIG_ACPI requires it
-	select PCI
+	# select PCI
 	# these are because we don't have them someplace else
 	select EARLY_EFI_PGT_DUMP
 
