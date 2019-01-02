@@ -817,19 +817,23 @@ static void __init __efi_enter_virtual_mode(void)
 
 	efi_sync_low_kernel_mappings();
 
-	status = efi_set_virtual_address_map(efi.memmap.desc_size * count,
-					     efi.memmap.desc_size,
-					     efi.memmap.desc_version,
-					     (efi_memory_desc_t *)pa,
-					     efi_systab_phys);
-	if (status != EFI_SUCCESS) {
-		pr_err("Unable to switch EFI into virtual mode (status=%lx)!\n",
-		       status);
-		goto err;
-	}
+	if (IS_ENABLED(CONFIG_ARCH_EFI)) {
+		pr_info("TODO: pick better virtual addresses\n");
+	} else {
+		status = efi_set_virtual_address_map(efi.memmap.desc_size * count,
+						     efi.memmap.desc_size,
+						     efi.memmap.desc_version,
+						     (efi_memory_desc_t *)pa,
+						     efi_systab_phys);
+		if (status != EFI_SUCCESS) {
+			pr_err("Unable to switch EFI into virtual mode (status=%lx)!\n",
+			       status);
+			goto err;
+		}
 
-	efi_check_for_embedded_firmwares();
-	efi_free_boot_services();
+		efi_check_for_embedded_firmwares();
+		efi_free_boot_services();
+	}
 
 	if (!efi_is_mixed())
 		efi_native_runtime_setup();
