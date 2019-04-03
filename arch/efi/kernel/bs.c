@@ -59,7 +59,8 @@ int bs_set_timer(u32 ms)
 	 */
 	u64 hns = (u64)ms * 10000ULL;
 
-	status = efi_call_early(set_timer, bs_ctx.event, EfiTimerRelative,hns);
+	status = efi_call(bs_ctx.systab->boottime->set_timer,
+			  bs_ctx.event, EfiTimerRelative, hns);
 
 	return efi_status_to_err(status);
 }
@@ -78,8 +79,8 @@ static int bs_thread(void *data)
 	 * We create this as TPL_APPLICATION so that it *doesn't* interrupt any
 	 * actual EFI work being done.
 	 */
-	status = efi_call_early(create_event, EFI_EVT_TIMER,
-				EFI_TPL_APPLICATION, bs_handle_timer,
+	status = efi_call(bs_ctx.systab->boottime->create_event,
+			  EFI_EVT_TIMER, EFI_TPL_APPLICATION, bs_handle_timer,
 				(void *)&bs_ctx, &bs_ctx.event);
 	if (status != EFI_SUCCESS)
 		return efi_status_to_err(status);
@@ -115,8 +116,7 @@ int __init efi_bs_init(efi_system_table_t *systab)
 	if (IS_ERR(bs_ctx.thread)) {
 		rc = PTR_ERR(bs_ctx.thread);
 		bs_ctx.thread = NULL;
-		efi_printk(systab,
-			   "Could not start EFI Boot Services thread\n");
+		printk("Could not start EFI Boot Services thread\n");
 		return rc;
 	}
 	wake_up_process(bs_ctx.thread);
