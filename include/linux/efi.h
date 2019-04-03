@@ -1309,6 +1309,7 @@ static inline struct efi_mokvar_table_entry *efi_mokvar_entry_find(
 }
 #endif
 
+void efi_printk_stp(char *str);
 #ifdef CONFIG_ARCH_EFI
 int efi_bs_init(efi_system_table_t *systab);
 #endif
