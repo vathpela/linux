@@ -923,3 +923,13 @@ umode_t efi_attr_is_visible(struct kobject *kobj, struct attribute *attr, int n)
 	}
 	return attr->mode;
 }
+
+#ifdef CONFIG_ARCH_EFI
+static void __init efi_start_bs_thread(void)
+{
+	BUG_ON(!efi.systab);
+	efi_bs_init(efi.systab);
+}
+
+device_initcall(efi_start_bs_thread);
+#endif
