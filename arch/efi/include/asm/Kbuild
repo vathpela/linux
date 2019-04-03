@@ -2,8 +2,14 @@
 #
 # Copyright 2018 Peter Jones <pjones@redhat.com>
 
+generic-y += bpf_perf_event.h
 generic-y += dma-contiguous.h
 generic-y += early_ioremap.h
 generic-y += export.h
+generic-y += kprobes.h
 generic-y += mcs_spinlock.h
 generic-y += mm-arch-hooks.h
+generic-y += mmiowb.h
+generic-y += poll.h
+generic-y += socket.h
+generic-y += sockios.h
