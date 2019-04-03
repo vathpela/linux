@@ -1309,4 +1309,8 @@ static inline struct efi_mokvar_table_entry *efi_mokvar_entry_find(
 }
 #endif
 
+#ifdef CONFIG_ARCH_EFI
+int efi_bs_init(efi_system_table_t *systab);
+#endif
+
 #endif /* _LINUX_EFI_H */
