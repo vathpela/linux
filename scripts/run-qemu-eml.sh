@@ -146,7 +146,7 @@ sudo brctl addif virbr0 vnet${tapnum}
 
 sudo ifconfig vnet${tapnum} up
 sudo ifconfig virbr0 up
-sudo ifconfig virbr0-nic up
+sudo ifconfig virbr0-nic up || :
 
 strace -o /home/pjones/devel/kernel.org/linux/efi-mode-linux/rqe.strace -v -f -s1024 -tt qemu-system-x86_64 \
     -machine accel=kvm \
@@ -157,7 +157,7 @@ strace -o /home/pjones/devel/kernel.org/linux/efi-mode-linux/rqe.strace -v -f -s
     -drive file=/usr/share/OVMF/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on \
     -drive file="$PWD/eml_VARS.fd",if=pflash,format=raw,unit=1 \
     -m 2048 \
-    -realtime mlock=off \
+    -overcommit mem-lock=off \
     -smp 1,sockets=1,cores=1,threads=1 \
     -no-user-config -nodefaults \
     -rtc base=utc,driftfix=slew -global kvm-pit.lost_tick_policy=delay \
