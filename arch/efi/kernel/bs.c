@@ -5,9 +5,11 @@
  * Copyright 2018 Peter Jones <pjones@redhat.com>
  */
 
+#include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/sched/task.h>
+#include <linux/timer.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/efi.h>
@@ -21,6 +23,8 @@ struct bs_ctx {
 
 	efi_event_t event;
 	efi_system_table_t *systab;
+
+	struct timer_list efi_deadline;
 };
 
 static struct bs_ctx bs_ctx;
@@ -53,8 +57,17 @@ void efi_bs_egress(void)
 
 void bs_handle_timer(efi_event_t event, void *context)
 {
+	printk("++ bs_handle_timer \n");
+
 	efi_bs_egress();
-	/* TODO: schedule bs_thread */
+
+	printk("  egressed \n");
+	mod_timer(&bs_ctx.efi_deadline, jiffies + msecs_to_jiffies(10));
+	printk("  after mod_timer \n");
+	//add_timer(&bs_ctx.efi_deadline);
+	printk("  calling schedlue \n");
+	schedule();
+
 }
 
 int bs_set_timer(u32 ms)
@@ -78,6 +91,12 @@ int bs_set_timer(u32 ms)
 #endif
 }
 
+static void bs_efi_deadline(struct timer_list *unused)
+{
+	printk("++ bs_efi_deadline \n");
+	wake_up_process(bs_ctx.thread);
+}
+
 static int bs_thread(void *data)
 {
 #if 0 /* once we can do EFI calls from here */
@@ -94,19 +113,25 @@ static int bs_thread(void *data)
 		return efi_status_to_err(status);
 #endif
 
+	printk("in bs_thread\n");
 	while (1) {
 		if (unlikely(kthread_should_stop())) {
 			set_current_state(TASK_RUNNING);
 			break;
 		}
 
+		printk(" bs_thread: ingressing \n");
 		efi_bs_ingress();
 		/*
 		 * TODO: make this number dynamic based on the next thing we
 		 * have otherise scheduled in linux.
 		 */
-		bs_set_timer(1000);
+		bs_set_timer(10);
 		wait_for_completion(&bs_ctx.bs_context_exit);
+		printk(" bs_thread: woke up \n");
+
+		/* remove the timer in case we got scheduled before it went off */
+		del_timer_sync(&bs_ctx.efi_deadline);
 	}
 
 	return 0;
@@ -119,6 +144,9 @@ int __init efi_bs_init(efi_system_table_t *systab)
 	init_completion(&bs_ctx.bs_context_entry);
 	init_completion(&bs_ctx.bs_context_exit);
 
+	timer_setup(&bs_ctx.efi_deadline, bs_efi_deadline, 0);
+	mod_timer(&bs_ctx.efi_deadline, 0);
+
 	bs_ctx.systab = systab;
 	bs_ctx.thread = kthread_create(bs_thread, &bs_ctx,
                                        "efi_boot_services");
@@ -130,7 +158,7 @@ int __init efi_bs_init(efi_system_table_t *systab)
 	}
 	wake_up_process(bs_ctx.thread);
 
-	wait_for_completion(&bs_ctx.bs_context_exit);
+	wait_for_completion(&bs_ctx.bs_context_entry);
 
 	return rc;
 }
