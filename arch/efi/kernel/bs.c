@@ -78,14 +78,14 @@ int bs_set_timer(u32 ms)
 	/*
 	 * set_timer()'s units are 100ns intervals
 	 */
-	u64 hns = (u64)ms * 10000ULL;
+	u64 hns = (u64)ms * 100ULL;
 
 	status = efi_call(bs_ctx.systab->boottime->set_timer,
 			  bs_ctx.event, EfiTimerRelative, hns);
 
 	return efi_status_to_err(status);
 #else
-	msleep_interruptible((u64)ms * 10000ull);
+	msleep_interruptible((u64)ms * 1ull);
 	bs_handle_timer(NULL, NULL);
 	return 0;
 #endif
@@ -126,7 +126,7 @@ static int bs_thread(void *data)
 		 * TODO: make this number dynamic based on the next thing we
 		 * have otherise scheduled in linux.
 		 */
-		bs_set_timer(10);
+		bs_set_timer(500);
 		wait_for_completion(&bs_ctx.bs_context_exit);
 		printk(" bs_thread: woke up \n");
 
