@@ -9,6 +9,7 @@
 #include <linux/sched.h>
 #include <linux/sched/task.h>
 #include <linux/kthread.h>
+#include <linux/delay.h>
 #include <linux/efi.h>
 #include <linux/completion.h>
 #include <asm/efi.h>
@@ -50,8 +51,15 @@ void efi_bs_egress(void)
 	complete(&bs_ctx.bs_context_exit);
 }
 
+void bs_handle_timer(efi_event_t event, void *context)
+{
+	efi_bs_egress();
+	/* TODO: schedule bs_thread */
+}
+
 int bs_set_timer(u32 ms)
 {
+#if 0 /* once we can do EFI calls from here */
 	efi_status_t status;
 
 	/*
@@ -63,16 +71,16 @@ int bs_set_timer(u32 ms)
 			  bs_ctx.event, EfiTimerRelative, hns);
 
 	return efi_status_to_err(status);
-}
-
-void bs_handle_timer(efi_event_t event, void *context)
-{
-	efi_bs_egress();
-	/* TODO: schedule bs_thread */
+#else
+	msleep_interruptible((u64)ms * 10000ull);
+	bs_handle_timer(NULL, NULL);
+	return 0;
+#endif
 }
 
 static int bs_thread(void *data)
 {
+#if 0 /* once we can do EFI calls from here */
 	efi_status_t status;
 
 	/*
@@ -84,6 +92,7 @@ static int bs_thread(void *data)
 				(void *)&bs_ctx, &bs_ctx.event);
 	if (status != EFI_SUCCESS)
 		return efi_status_to_err(status);
+#endif
 
 	while (1) {
 		if (unlikely(kthread_should_stop())) {
