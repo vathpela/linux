@@ -63,9 +63,4 @@ prepare-objtool : efi-prepare-objtool
 
 override KBUILD_LDS	= arch/$(HEADER_ARCH)/kernel/vmlinux.lds
 
-efi_archheaders:
-	$(Q)$(MAKE) -f $(srctree)/Makefile ARCH=$(HEADER_ARCH) asm-generic archheaders
-
-archheaders: efi_archheaders
-
 export HEADER_ARCH SUBARCH

@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
-out := arch/$(SRCARCH)/include/generated/asm
-uapi := arch/$(SRCARCH)/include/generated/uapi/asm
+ifneq ($(HEADER_ARCH),)
+	out := arch/$(HEADER_ARCH)/include/generated/asm
+	uapi := arch/$(HEADER_ARCH)/include/generated/uapi/asm
+else
+	out := arch/$(SRCARCH)/include/generated/asm
+	uapi := arch/$(SRCARCH)/include/generated/uapi/asm
+endif
 
 # Create output directory if not already present
 _dummy := $(shell [ -d '$(out)' ] || mkdir -p '$(out)') \
