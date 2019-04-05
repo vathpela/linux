@@ -144,9 +144,6 @@ int __init efi_bs_init(efi_system_table_t *systab)
 	init_completion(&bs_ctx.bs_context_entry);
 	init_completion(&bs_ctx.bs_context_exit);
 
-	timer_setup(&bs_ctx.efi_deadline, bs_efi_deadline, 0);
-	mod_timer(&bs_ctx.efi_deadline, 0);
-
 	bs_ctx.systab = systab;
 	bs_ctx.thread = kthread_create(bs_thread, &bs_ctx,
                                        "efi_boot_services");
@@ -156,6 +153,10 @@ int __init efi_bs_init(efi_system_table_t *systab)
 		printk("Could not start EFI Boot Services thread\n");
 		return rc;
 	}
+
+	timer_setup(&bs_ctx.efi_deadline, bs_efi_deadline, 0);
+	mod_timer(&bs_ctx.efi_deadline, 0);
+
 	wake_up_process(bs_ctx.thread);
 
 	wait_for_completion(&bs_ctx.bs_context_entry);
