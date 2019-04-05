@@ -126,7 +126,7 @@ static int bs_thread(void *data)
 		 * TODO: make this number dynamic based on the next thing we
 		 * have otherise scheduled in linux.
 		 */
-		bs_set_timer(500);
+		bs_set_timer(5000);
 		wait_for_completion(&bs_ctx.bs_context_exit);
 		printk(" bs_thread: woke up \n");
 
