@@ -105,6 +105,22 @@ static int __init setup_add_efi_memmap(char *arg)
 }
 early_param("add_efi_memmap", setup_add_efi_memmap);
 
+static void
+fmt_ptr(void *ptr, char *buf)
+{
+	const char hex[] = "0123456789abcdef";
+	unsigned long ptrval = (unsigned long)ptr;
+	int i, j, x;
+
+	for (i = 0, j = 0, x=56; i < sizeof(ptr); i++, j+=2,x-=8) {
+		u8 v0 = (ptrval >> (x + 4)) & 0xf;
+		u8 v1 = (ptrval >> x) & 0xf;
+		buf[j] = hex[v0];
+		buf[j+1] = hex[v1];
+	}
+	buf[sizeof(ptr)*2] = 0;
+}
+
 void __init efi_find_mirror(void)
 {
 	efi_memory_desc_t *md;
@@ -348,6 +364,8 @@ static int __init efi_systab_init(unsigned long phys)
 	void *p;
 	int ret;
 
+	char buf0[sizeof(void *)*2+1];
+
 	hdr = p = early_memremap_ro(phys, size);
 	if (p == NULL) {
 		pr_err("Couldn't map the system table!\n");
@@ -374,6 +392,8 @@ static int __init efi_systab_init(unsigned long phys)
 				early_memunmap(p, size);
 				return -ENOMEM;
 			}
+			fmt_ptr(data, buf0);
+			pr_info("efi_setup:%s\n", buf0);
 
 			efi_fw_vendor		= (unsigned long)data->fw_vendor;
 			efi_config_table	= (unsigned long)data->tables;
@@ -408,6 +428,8 @@ static int __init efi_systab_init(unsigned long phys)
 		pr_err("EFI data located above 4GB, disabling EFI.\n");
 		return -EINVAL;
 	}
+	fmt_ptr(p, buf0);
+	pr_info("efi runtime p:%s\n", buf0);
 
 	return 0;
 }
@@ -443,11 +465,18 @@ static int __init efi_config_init(const efi_config_table_type_t *arch_tables)
 
 void __init efi_init(void)
 {
-	if (IS_ENABLED(CONFIG_X86_32) &&
-	    (boot_params.efi_info.efi_systab_hi ||
-	     boot_params.efi_info.efi_memmap_hi)) {
-		pr_info("Table located above 4GB, disabling EFI.\n");
-		return;
+	if (IS_ENABLED(CONFIG_X86_32)) {
+		pr_info("efi_systab_hi:0x%08x efi_systab:0x%08x\n",
+			boot_params.efi_info.efi_systab_hi,
+			boot_params.efi_info.efi_systab);
+		pr_info("efi_memmap_hi:0x%08x efi_memmap:0x%08x\n",
+			boot_params.efi_info.efi_memmap_hi,
+			boot_params.efi_info.efi_memmap);
+		if (boot_params.efi_info.efi_systab_hi ||
+		    boot_params.efi_info.efi_memmap_hi) {
+			pr_info("Table located above 4GB, disabling EFI.\n");
+			return;
+		}
 	}
 
 	efi_systab_phys = boot_params.efi_info.efi_systab |
@@ -812,6 +841,7 @@ static void __init __efi_enter_virtual_mode(void)
 		efi_print_memmap();
 	}
 
+	printk("%s:%d printk got here\n", __FILE__, __LINE__);
 	if (efi_setup_page_tables(pa, 1 << pg_shift))
 		goto err;
 
@@ -922,6 +952,32 @@ umode_t efi_attr_is_visible(struct kobject *kobj, struct attribute *attr, int n)
 			return 0;
 	}
 	return attr->mode;
+}
+
+static void __init efi_char16_printk_stp(efi_char16_t *str)
+{
+#if 0
+	efi_call_proto(efi_simple_text_output_protocol, output_string,
+		       efi_early->text_output, str);
+#endif
+}
+
+void __init efi_printk_stp(char *str)
+{
+	/* c&p from efi_printk */
+	char *s8;
+
+	for (s8 = str; *s8; s8++) {
+		efi_char16_t ch[2] = { 0 };
+
+		ch[0] = *s8;
+		if (*s8 == '\n') {
+			efi_char16_t nl[2] = { '\r', 0 };
+			efi_char16_printk_stp(nl);
+		}
+
+		efi_char16_printk_stp(ch);
+	}
 }
 
 #ifdef CONFIG_ARCH_EFI

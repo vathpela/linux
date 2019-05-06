@@ -449,9 +449,9 @@ efi_status_t efi_exit_boot_services(void *handle,
 		goto free_map;
 
 	if (IS_ENABLED(CONFIG_ARCH_EFI)) {
-		efi_printk(sys_table_arg, "TODO: massage the memory map here\n");
+		efi_printk("TODO: massage the memory map here\n");
 	} else {
-		efi_printk(sys_table_arg, "BUG: we shouldn't be here\n");
+		efi_printk("BUG: we shouldn't be here\n");
 		if (efi_disable_pci_dma)
 			efi_pci_disable_bridge_busmaster();
 

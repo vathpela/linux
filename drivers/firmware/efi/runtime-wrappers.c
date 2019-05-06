@@ -203,21 +203,25 @@ static void efi_call_rts(struct work_struct *work)
 				       (efi_time_t *)arg2);
 		break;
 	case EFI_GET_VARIABLE:
+		pr_debug("EFI_GET_VARIABLE\n");
 		status = efi_call_virt(get_variable, (efi_char16_t *)arg1,
 				       (efi_guid_t *)arg2, (u32 *)arg3,
 				       (unsigned long *)arg4, (void *)arg5);
 		break;
 	case EFI_GET_NEXT_VARIABLE:
+		pr_debug("EFI_GET_NEXT_VARIABLE\n");
 		status = efi_call_virt(get_next_variable, (unsigned long *)arg1,
 				       (efi_char16_t *)arg2,
 				       (efi_guid_t *)arg3);
 		break;
 	case EFI_SET_VARIABLE:
+		pr_debug("EFI_SET_VARIABLE\n");
 		status = efi_call_virt(set_variable, (efi_char16_t *)arg1,
 				       (efi_guid_t *)arg2, *(u32 *)arg3,
 				       *(unsigned long *)arg4, (void *)arg5);
 		break;
 	case EFI_QUERY_VARIABLE_INFO:
+		pr_debug("EFI_QUERY_VARIABLE_INFO\n");
 		status = efi_call_virt(query_variable_info, *(u32 *)arg1,
 				       (u64 *)arg2, (u64 *)arg3, (u64 *)arg4);
 		break;

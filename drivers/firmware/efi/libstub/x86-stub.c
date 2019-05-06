@@ -607,7 +607,7 @@ static efi_status_t exit_boot_func(struct efi_boot_memmap *map,
 	const char *signature;
 	struct exit_boot_struct *p = priv;
 
-	efi_printk(sys_table_arg, "TODO: nerf efi memory maps\n");
+	efi_printk("TODO: nerf efi memory maps\n");
 
 	signature = efi_is_64bit() ? EFI64_LOADER_SIGNATURE
 				   : EFI32_LOADER_SIGNATURE;
@@ -649,10 +649,12 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 		return status;
 
 	/* Might as well exit boot services now */
+	efi_printk(__FILE__ ":" __stringify(__LINE__) " got here\n");
 	status = efi_exit_boot_services(handle, &map, &priv, exit_boot_func);
 	if (status != EFI_SUCCESS)
 		return status;
 
+	efi_printk(__FILE__ ":" __stringify(__LINE__) " got here\n");
 	/* Historic? */
 	boot_params->alt_mem_k	= 32 * 1024;
 
@@ -660,6 +662,7 @@ static efi_status_t exit_boot(struct boot_params *boot_params, void *handle)
 	if (status != EFI_SUCCESS)
 		return status;
 
+	efi_printk(__FILE__ ":" __stringify(__LINE__) " got here\n");
 	return EFI_SUCCESS;
 }
 

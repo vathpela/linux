@@ -98,7 +98,17 @@ static inline void efi_fpu_end(void)
 	efi_fpu_end();							\
 })
 
+#if defined(CONFIG_ARCH_EFI)
+#define arch_efi_call_virt(p, f, args...)				\
+({									\
+	pr_debug("arch_efi_call_virt: table:%s->%s() -> %p->%p()\n",    \
+		 __stringify(p), __stringify(f), p, p->f);		\
+	p->f(args);							\
+})
+#else
 #define arch_efi_call_virt(p, f, args...)	p->f(args)
+#endif
+
 
 #else /* !CONFIG_X86_32 */
 
