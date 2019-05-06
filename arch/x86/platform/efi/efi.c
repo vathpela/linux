@@ -841,6 +841,7 @@ static void __init __efi_enter_virtual_mode(void)
 		efi_print_memmap();
 	}
 
+	efi_printk_stp(__FILE__ ":" __stringify(__LINE__) " efi_printk_stp got here\n");
 	printk("%s:%d printk got here\n", __FILE__, __LINE__);
 	if (efi_setup_page_tables(pa, 1 << pg_shift))
 		goto err;
@@ -849,6 +850,8 @@ static void __init __efi_enter_virtual_mode(void)
 
 	if (IS_ENABLED(CONFIG_ARCH_EFI)) {
 		pr_info("TODO: pick better virtual addresses\n");
+		efi_printk_stp(__FILE__ ":" __stringify(__LINE__) " efi_printk_stp got here\n");
+		printk("%s:%d printk got here\n", __FILE__, __LINE__);
 	} else {
 		status = efi_set_virtual_address_map(efi.memmap.desc_size * count,
 						     efi.memmap.desc_size,
@@ -984,6 +987,8 @@ void __init efi_printk_stp(char *str)
 static void __init efi_start_bs_thread(void)
 {
 	BUG_ON(!efi.systab);
+	efi_printk_stp(__FILE__ ":" __stringify(__LINE__) " efi_printk_stp got here\n");
+	printk("%s:%d printk got here\n", __FILE__, __LINE__);
 	efi_bs_init(efi.systab);
 }
 
