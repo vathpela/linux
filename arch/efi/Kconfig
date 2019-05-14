@@ -4,7 +4,7 @@
 
 config ARCH_EFI
 	bool
-	default n
+	default y
 	# because we want it
 	select ACPI
 	# because we don't want to live long enough to need it
@@ -68,7 +68,7 @@ config SOUND
 # 	depends on !ARCH_EFI
 # 	help
 # 	  Just say 'N'
- 
+
 source "arch/$(HEADER_ARCH)/efi/Kconfig"
 
 source "drivers/firmware/Kconfig"

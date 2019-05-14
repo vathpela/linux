@@ -3,6 +3,7 @@
 # Copyright 2018 Peter Jones <pjones@redhat.com>
 
 ARCH_DIR := arch/efi
+$(info arch/efi/Makefile:6 ARCH_DIR:$(ARCH_DIR))
 
 filechk_gen_header = $<
 
@@ -11,7 +12,7 @@ HEADER_ARCH 	:= $(SUBARCH)
 ifneq ($(filter $(SUBARCH),x86 x86_64 i386),)
 	HEADER_ARCH := x86
 endif
-override SRCARCH=$(HEADER_ARCH)
+override SRCARCH := $(HEADER_ARCH)
 
 HOST_DIR := arch/$(HEADER_ARCH)
 
@@ -22,14 +23,16 @@ core-y += $(ARCH_DIR)/kernel/ \
 include $(HOST_DIR)/Makefile
 
 # select defconfig based on actual architecture
+$(info arch/efi/Makefile:26 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
+
 ifeq ($(SUBARCH),x86)
 	ifeq ($(shell uname -m),x86_64)
-		KBUILD_DEFCONFIG := x86_64_defconfig
+		KBUILD_DEFCONFIG := x86_64_efi_defconfig
 	else
-		KBUILD_DEFCONFIG := i386_defconfig
+		KBUILD_DEFCONFIG := i386_efi_defconfig
 	endif
 else
-	KBUILD_DEFCONFIG := $(SUBARCH)_defconfig
+	KBUILD_DEFCONFIG := $(SUBARCH)_efi_defconfig
 endif
 
 SHARED_HEADERS	:= $(ARCH_DIR)/include/shared
@@ -63,4 +66,4 @@ prepare-objtool : efi-prepare-objtool
 
 override KBUILD_LDS	= arch/$(HEADER_ARCH)/kernel/vmlinux.lds
 
-export HEADER_ARCH SUBARCH
+export HEADER_ARCH SUBARCH HOST_DIR ARCH_INCLUDE LINUXINCLUDE

@@ -17,8 +17,8 @@ config OUTPUT_FORMAT
 
 config ARCH_DEFCONFIG
 	string
-	default "arch/efi/configs/i386_defconfig" if X86_32
-	default "arch/efi/configs/x86_64_defconfig" if X86_64
+	default "arch/efi/configs/i386_efi_defconfig" if X86_32
+	default "arch/efi/configs/x86_64_efi_defconfig" if X86_64
 
 config ARCH_EFI_X86
 	def_bool y

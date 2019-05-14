@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
+$(info tools/scripts/Makefile:2 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 HOSTARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
                                   -e s/sun4u/sparc/ -e s/sparc64/sparc/ \
                                   -e /arm64/!s/arm.*/arm/ -e s/sa110/arm/ \
@@ -11,7 +12,12 @@ ifndef ARCH
 ARCH := $(HOSTARCH)
 endif
 
-SRCARCH := $(ARCH)
+ifeq ($(ARCH),efi)
+        SUBARCH := $(SRCARCH)
+        HEADER_ARCH := $(SRCARCH)
+else
+        SRCARCH := $(ARCH)
+endif
 
 # Additional ARCH settings for x86
 ifeq ($(ARCH),i386)
@@ -33,6 +39,7 @@ endif
 ifeq ($(ARCH),sh64)
        SRCARCH := sh
 endif
+$(info tools/scripts/Makefile:40 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 
 LP64 := $(shell echo __LP64__ | ${CC} ${CFLAGS} -E -x c - | tail -n 1)
 ifeq ($(LP64), 1)

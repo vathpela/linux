@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
+$(info tools/objtool/Makefile:2 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH) HEADER_ARCH:$(HEADER_ARCH))
 include ../scripts/Makefile.include
+$(info tools/objtool/Makefile:4 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH) HEADER_ARCH:$(HEADER_ARCH))
 include ../scripts/Makefile.arch
+$(info tools/objtool/Makefile:6 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH) HEADER_ARCH:$(HEADER_ARCH))
 
 # always use the host compiler
 AR	 = $(HOSTAR)
@@ -45,6 +48,7 @@ AWK = awk
 SUBCMD_CHECK := n
 SUBCMD_ORC := n
 
+$(info tools/objtool/Makefile:51 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH) HEADER_ARCH:$(HEADER_ARCH))
 ifeq ($(SRCARCH),x86)
 	SUBCMD_CHECK := y
 	SUBCMD_ORC := y

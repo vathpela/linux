@@ -1,4 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
+# XXX temporary hack -- pjones
+override ARCH := efi
+$(info Makefile:4 ARCH:$(ARCH))
+
 VERSION = 5
 PATCHLEVEL = 15
 SUBLEVEL = 0
@@ -381,11 +385,17 @@ include $(srctree)/scripts/subarch.include
 # Alternatively CROSS_COMPILE can be set in the environment.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+$(info Makefile:388 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 ARCH		?= $(SUBARCH)
 
 # Architecture as present in compile.h
-UTS_MACHINE 	:= $(ARCH)
-SRCARCH 	:= $(ARCH)
+ifeq ($(ARCH),efi)
+        UTS_MACHINE := $(SUBARCH)
+        SRCARCH := $(SUBARCH)
+else
+        UTS_MACHINE := $(ARCH)
+        SRCARCH := $(ARCH)
+endif
 
 # Additional ARCH settings for x86
 ifeq ($(ARCH),i386)
@@ -408,6 +418,7 @@ ifeq ($(ARCH),parisc64)
        SRCARCH := parisc
 endif
 
+$(info Makefile:422 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 export cross_compiling :=
 ifneq ($(SRCARCH),$(SUBARCH))
 cross_compiling := 1
@@ -610,8 +621,15 @@ ifdef config-build
 # Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
+ifeq ($(ARCH),efi)
+$(info Makefile:623 ARCH:$(ARCH) SRCARCH:$(SRCARCH) sourcing $(srctree)/arch/$(ARCH)/Makefile)
+include $(srctree)/arch/$(ARCH)/Makefile
+else
+$(info Makefile:626 ARCH:$(ARCH) SRCARCH:$(SRCARCH) sourcing $(srctree)/arch/$(SRCARCH)/Makefile)
 include $(srctree)/arch/$(SRCARCH)/Makefile
+endif
 export KBUILD_DEFCONFIG KBUILD_KCONFIG CC_VERSION_TEXT
+$(info Makefile:630 KBUILD_DEFCONFIG:$(KBUILD_DEFCONFIG))
 
 config: outputmakefile scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
