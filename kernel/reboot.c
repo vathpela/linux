@@ -44,7 +44,11 @@ enum reboot_mode panic_reboot_mode = REBOOT_UNDEFINED;
  */
 int reboot_default = 1;
 int reboot_cpu;
+#if defined(CONFIG_ARCH_EFI)
+enum reboot_type reboot_type = BOOT_EFI;
+#else
 enum reboot_type reboot_type = BOOT_ACPI;
+#endif
 int reboot_force;
 
 /*
