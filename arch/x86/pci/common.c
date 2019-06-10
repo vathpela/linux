@@ -21,8 +21,12 @@
 #include <asm/setup.h>
 #include <asm/irqdomain.h>
 
+#if defined(CONFIG_ARCH_EFI)
+unsigned int pci_probe = 0;
+#else
 unsigned int pci_probe = PCI_PROBE_BIOS | PCI_PROBE_CONF1 | PCI_PROBE_CONF2 |
 				PCI_PROBE_MMCONF;
+#endif
 
 static int pci_bf_sort;
 int pci_routeirq;
