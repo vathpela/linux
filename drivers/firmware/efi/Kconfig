@@ -14,6 +14,11 @@ config EFI_VARS
 	  legacy users: new users should use the efivarfs filesystem
 	  instead.
 
+config EFI_VARINFO
+	bool
+	depends on EFI
+	default y
+
 config EFI_ESRT
 	bool
 	depends on EFI && !IA64

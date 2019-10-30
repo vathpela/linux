@@ -1,0 +1,46 @@
+What:		/sys/firmware/efi/varinfo/
+Date:		October 2019
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	Provides userland access to information about the UEFI variable
+		storage.
+
+What:		/sys/firmware/efi/varinfo/preboot_bs
+		/sys/firmware/efi/varinfo/preboot_bs_nv
+		/sys/firmware/efi/varinfo/preboot_rt
+		/sys/firmware/efi/varinfo/preboot_rt_nv
+		/sys/firmware/efi/varinfo/preboot_bs_rt
+		/sys/firmware/efi/varinfo/preboot_bs_rt_nv
+Date:		October 2019
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	Provides the following information about UEFI variable storage,
+		queried before ExitBootServices() is called.
+
+		Maximum Variable Storage Size - the maximum size of the storage
+			space available for the EFI variables associated with
+			the attributes specified.
+		Remaining Variable Storage Size - the remaining size of the
+			storage space available for EFI variables associated
+			with the attributes specified.
+		MaximumVariableSize - the maximum size of an individual EFI
+			variable associated with the attributes specified.
+
+		The attributes referenced above are in the names of each sysfs file:
+		bs: EFI_BOOT_SERVICES_ATTRIBUTE
+		rt: EFI_RUNTIME_SERVICES_ATTRIBUTE
+		nv: EFI_NON_VOLATILE_ATTRIBUTE
+
+		For more information, consule the UEFI specification at
+		https://uefi.org/specifications
+
+What:		/sys/firmware/efi/varinfo/runtime_bs
+		/sys/firmware/efi/varinfo/runtime_bs_nv
+		/sys/firmware/efi/varinfo/runtime_rt
+		/sys/firmware/efi/varinfo/runtime_rt_nv
+		/sys/firmware/efi/varinfo/runtime_bs_rt
+		/sys/firmware/efi/varinfo/runtime_bs_rt_nv
+Date:		October 2019
+Contact:	Peter Jones <pjones@redhat.com>
+Description:	Provides the following information about UEFI variable storage,
+		queried at runtime after ExitBootServices() has been called.
+		See the description for /sys/firmware/efi/varinfo/preboot_*
+		(above) for more information.

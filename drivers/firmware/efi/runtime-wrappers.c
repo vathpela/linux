@@ -216,6 +216,13 @@ static void efi_call_rts(struct work_struct *work)
 		status = efi_call_virt(set_variable, (const efi_char16_t *)arg1,
 				       (const efi_guid_t *)arg2, *(u32 *)arg3,
 				       *(unsigned long *)arg4, (void *)arg5);
+		efi_update_varinfo();
+		if (status != EFI_SUCCESS)
+			efi_log_set_variable_failure((efi_char16_t *)arg1,
+						     (efi_guid_t *)arg2,
+						     *(u32 *)arg3,
+						     *(unsigned long *)arg4,
+						     status);
 		break;
 	case EFI_QUERY_VARIABLE_INFO:
 		status = efi_call_virt(query_variable_info, *(u32 *)arg1,

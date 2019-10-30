@@ -799,6 +799,8 @@ unsigned long efi_main(efi_handle_t handle,
 
 	setup_quirks(boot_params);
 
+	efi_save_varinfo(sys_table_arg);
+
 	status = exit_boot(boot_params, handle);
 	if (status != EFI_SUCCESS) {
 		efi_err("exit_boot() failed!\n");

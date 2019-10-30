@@ -46,6 +46,9 @@ struct efi __read_mostly efi = {
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	.mokvar_table		= EFI_INVALID_TABLE_ADDR,
 #endif
+#ifdef CONFIG_EFI_VARINFO
+	.variable_info		= EFI_INVALID_TABLE_ADDR,
+#endif
 };
 EXPORT_SYMBOL(efi);
 
@@ -526,6 +529,9 @@ static const efi_config_table_type_t common_tables[] __initconst = {
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	{LINUX_EFI_MOK_VARIABLE_TABLE_GUID,	&efi.mokvar_table,	"MOKvar"	},
 #endif
+#ifdef CONFIG_EFI_VARINFO
+	{LINUX_EFI_VARIABLE_INFO_TABLE_GUID,	&efi.variable_info,	"VARINFO"	},
+#endif
 	{},
 };
 
@@ -612,6 +618,26 @@ int __init efi_config_parse_tables(const efi_config_table_t *config_tables,
 		efi_memattr_init();
 
 	efi_tpm_eventlog_init();
+
+#ifdef CONFIG_EFI_VARINFO
+	if (efi.variable_info != EFI_INVALID_TABLE_ADDR) {
+		struct efi_varinfo_table *table;
+		unsigned long sz;
+
+		table = early_memremap(ALIGN_DOWN(efi.variable_info, PAGE_SIZE),
+				       PAGE_SIZE);
+		if (table == NULL) {
+			pr_err("Could not map EFI variable info table!\n");
+			return -ENOMEM;
+		}
+
+		sz = round_up(sizeof(*table), PAGE_SIZE);
+
+		memblock_reserve(efi.variable_info, sz);
+
+		early_memunmap(table, PAGE_SIZE);
+	}
+#endif
 
 	if (mem_reserve != EFI_INVALID_TABLE_ADDR) {
 		unsigned long prsv = mem_reserve;

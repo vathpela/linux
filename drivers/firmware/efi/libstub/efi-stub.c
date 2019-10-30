@@ -288,6 +288,8 @@ efi_status_t __efiapi efi_pe_entry(efi_handle_t handle,
 
 	install_memreserve_table();
 
+	efi_save_varinfo(sys_table_arg);
+
 	status = allocate_new_fdt_and_exit_boot(handle, &fdt_addr,
 						initrd_addr, initrd_size,
 						cmdline_ptr, fdt_addr, fdt_size);
