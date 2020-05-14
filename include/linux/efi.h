@@ -672,17 +672,20 @@ static inline void efi_fake_memmap(void) { }
 extern unsigned long efi_mem_attr_table;
 
 /*
- * efi_memattr_perm_setter - arch specific callback function passed into
- *                           efi_memattr_apply_permissions() that updates the
- *                           mapping permissions described by the second
- *                           argument in the page tables referred to by the
- *                           first argument.
+ * efi_memattr_visitor - callback function passed into
+ *                       efi_memattr_visit_valid() that visits each mapping
+ *                       in the Memory Attribute Table.
+ * arguments:
+ *  matd: the Memory Attribute Table descriptor
+ *  md: the corresponding EFI memmap descriptor
+ *  state: state passed in to efi_memattr_visit_valid()
  */
-typedef int (*efi_memattr_perm_setter)(struct mm_struct *, efi_memory_desc_t *);
+typedef int (*efi_memattr_visitor)(const efi_memory_desc_t *matd,
+				   const efi_memory_desc_t *md,
+				   void *state);
 
 extern int efi_memattr_init(void);
-extern int efi_memattr_apply_permissions(struct mm_struct *mm,
-					 efi_memattr_perm_setter fn);
+extern int efi_memattr_visit_valid(efi_memattr_visitor fn, void *state);
 
 /*
  * efi_early_memdesc_ptr - get the n-th EFI memmap descriptor

@@ -378,7 +378,7 @@ void __init parse_efi_setup(u64 phys_addr, u32 data_len)
 	efi_setup = phys_addr + sizeof(struct setup_data);
 }
 
-static int __init efi_update_mappings(efi_memory_desc_t *md, unsigned long pf)
+static int __init efi_update_mappings(const efi_memory_desc_t *md, unsigned long pf)
 {
 	unsigned long pfn;
 	pgd_t *pgd = efi_mm.pgd;
@@ -401,20 +401,22 @@ static int __init efi_update_mappings(efi_memory_desc_t *md, unsigned long pf)
 	return err1 || err2;
 }
 
-static int __init efi_update_mem_attr(struct mm_struct *mm, efi_memory_desc_t *md)
+static int __init efi_update_mem_attr(const efi_memory_desc_t *matd,
+				      const efi_memory_desc_t *md,
+				      void *state)
 {
 	unsigned long pf = 0;
 
-	if (md->attribute & EFI_MEMORY_XP)
+	if (matd->attribute & EFI_MEMORY_XP)
 		pf |= _PAGE_NX;
 
-	if (!(md->attribute & EFI_MEMORY_RO))
+	if (!(matd->attribute & EFI_MEMORY_RO))
 		pf |= _PAGE_RW;
 
 	if (sev_active())
 		pf |= _PAGE_ENC;
 
-	return efi_update_mappings(md, pf);
+	return efi_update_mappings(matd, pf);
 }
 
 void __init efi_runtime_update_mappings(void)
@@ -432,7 +434,7 @@ void __init efi_runtime_update_mappings(void)
 	 * exists, since it is intended to supersede EFI_PROPERTIES_TABLE.
 	 */
 	if (efi_enabled(EFI_MEM_ATTR)) {
-		efi_memattr_apply_permissions(NULL, efi_update_mem_attr);
+		efi_memattr_visit_valid(efi_update_mem_attr, NULL);
 		return;
 	}
 

@@ -53,7 +53,7 @@ unmap:
  * entirely by a UEFI memory map entry with matching attributes. The virtual
  * address of @out is set according to the matching entry that was found.
  */
-static bool entry_is_valid(const efi_memory_desc_t *in, efi_memory_desc_t *out)
+static bool entry_is_valid(const efi_memory_desc_t *in, efi_memory_desc_t *out, efi_memory_desc_t **mdout)
 {
 	u64 in_paddr = in->phys_addr;
 	u64 in_size = in->num_pages << EFI_PAGE_SHIFT;
@@ -114,6 +114,9 @@ static bool entry_is_valid(const efi_memory_desc_t *in, efi_memory_desc_t *out)
 			return false;
 		}
 
+		if (mdout)
+			*mdout = md;
+
 		out->virt_addr = in_paddr + (md->virt_addr - md_paddr);
 
 		return true;
@@ -130,8 +133,8 @@ static bool entry_is_valid(const efi_memory_desc_t *in, efi_memory_desc_t *out)
  * This requires the UEFI memory map to have already been populated with
  * virtual addresses.
  */
-int __init efi_memattr_apply_permissions(struct mm_struct *mm,
-					 efi_memattr_perm_setter fn)
+int __init efi_memattr_visit_valid(efi_memattr_visitor fn,
+				   void *state)
 {
 	static bool log_once = true;
 	efi_memory_attributes_table_t *tbl;
@@ -160,24 +163,24 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 		pr_info("Processing EFI Memory Attributes table:\n");
 
 	for (i = ret = 0; ret == 0 && i < tbl->num_entries; i++) {
-		efi_memory_desc_t md;
+		efi_memory_desc_t matd, *md;
 		unsigned long size;
 		bool valid;
 		char buf[64];
 
 		valid = entry_is_valid((void *)tbl->entry + i * tbl->desc_size,
-				       &md);
-		size = md.num_pages << EFI_PAGE_SHIFT;
+				       &matd, &md);
+		size = matd.num_pages << EFI_PAGE_SHIFT;
 		if (log_once && (efi_enabled(EFI_DBG) || !valid))
 			pr_info("%s 0x%012llx-0x%012llx %s\n",
-				valid ? "" : "!", md.phys_addr,
-				md.phys_addr + size - 1,
-				efi_md_typeattr_format(buf, sizeof(buf), &md));
+				valid ? "" : "!", matd.phys_addr,
+				matd.phys_addr + size - 1,
+				efi_md_typeattr_format(buf, sizeof(buf), &matd));
 
 		if (valid) {
-			ret = fn(mm, &md);
+			ret = fn(&matd, md, state);
 			if (ret)
-				pr_err("Error updating mappings, skipping subsequent md's\n");
+				pr_err("Error iterating EFI memmap, skipping subsequent attributes\n");
 		}
 	}
 	log_once = false;

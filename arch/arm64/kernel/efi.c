@@ -95,11 +95,16 @@ static int __init set_permissions(pte_t *ptep, unsigned long addr, void *data)
 	return 0;
 }
 
-int __init efi_set_mapping_permissions(struct mm_struct *mm,
-				       efi_memory_desc_t *md)
+int __init efi_set_mapping_permissions(const efi_memory_desc_t *matd,
+				       const efi_memory_desc_t *md,
+				       void *state)
 {
-	BUG_ON(md->type != EFI_RUNTIME_SERVICES_CODE &&
-	       md->type != EFI_RUNTIME_SERVICES_DATA);
+	struct mm_struct *mm;
+
+	mm = (struct mm_struct *)state;
+
+	BUG_ON(matd->type != EFI_RUNTIME_SERVICES_CODE &&
+	       matd->type != EFI_RUNTIME_SERVICES_DATA);
 
 	/*
 	 * Calling apply_to_page_range() is only safe on regions that are
@@ -108,9 +113,9 @@ int __init efi_set_mapping_permissions(struct mm_struct *mm,
 	 * (and this is checked by the generic Memory Attributes table parsing
 	 * routines), there is no need to check that again here.
 	 */
-	return apply_to_page_range(mm, md->virt_addr,
-				   md->num_pages << EFI_PAGE_SHIFT,
-				   set_permissions, md);
+	return apply_to_page_range(mm, matd->virt_addr,
+				   matd->num_pages << EFI_PAGE_SHIFT,
+				   set_permissions, matd);
 }
 
 /*

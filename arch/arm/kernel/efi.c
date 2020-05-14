@@ -21,13 +21,17 @@ static int __init set_permissions(pte_t *ptep, unsigned long addr, void *data)
 	return 0;
 }
 
-int __init efi_set_mapping_permissions(struct mm_struct *mm,
-				       efi_memory_desc_t *md)
+int __init efi_set_mapping_permissions(const efi_memory_desc_t *matd,
+				       const efi_memory_desc_t *md,
+				       void *state)
 {
 	unsigned long base, size;
+	struct mm_struct *mm;
 
-	base = md->virt_addr;
-	size = md->num_pages << EFI_PAGE_SHIFT;
+	mm = (struct mm_struct *)state;
+
+	base = matd->virt_addr;
+	size = matd->num_pages << EFI_PAGE_SHIFT;
 
 	/*
 	 * We can only use apply_to_page_range() if we can guarantee that the
@@ -37,7 +41,7 @@ int __init efi_set_mapping_permissions(struct mm_struct *mm,
 	 */
 	if (round_down(base + size, SECTION_SIZE) <
 	    round_up(base, SECTION_SIZE) + SECTION_SIZE)
-		return apply_to_page_range(mm, base, size, set_permissions, md);
+		return apply_to_page_range(mm, base, size, set_permissions, matd);
 
 	return 0;
 }
@@ -70,6 +74,6 @@ int __init efi_create_mapping(struct mm_struct *mm, efi_memory_desc_t *md)
 	 * If stricter permissions were specified, apply them now.
 	 */
 	if (md->attribute & (EFI_MEMORY_RO | EFI_MEMORY_XP))
-		return efi_set_mapping_permissions(mm, md);
+		return efi_set_mapping_permissions(md, mm);
 	return 0;
 }

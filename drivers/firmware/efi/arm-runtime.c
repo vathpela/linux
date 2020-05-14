@@ -74,7 +74,7 @@ static bool __init efi_virtmap_init(void)
 		}
 	}
 
-	if (efi_memattr_apply_permissions(&efi_mm, efi_set_mapping_permissions))
+	if (efi_memattr_visit_valid(efi_set_mapping_permissions, &efi_mm))
 		return false;
 
 	return true;
