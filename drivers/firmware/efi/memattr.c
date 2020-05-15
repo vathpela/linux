@@ -133,6 +133,7 @@ static bool entry_is_valid(const efi_memory_desc_t *in, efi_memory_desc_t *out)
 int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 					 efi_memattr_perm_setter fn)
 {
+	static bool log_once = true;
 	efi_memory_attributes_table_t *tbl;
 	int i, ret;
 
@@ -155,7 +156,7 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 		return -ENOMEM;
 	}
 
-	if (efi_enabled(EFI_DBG))
+	if (log_once && efi_enabled(EFI_DBG))
 		pr_info("Processing EFI Memory Attributes table:\n");
 
 	for (i = ret = 0; ret == 0 && i < tbl->num_entries; i++) {
@@ -167,7 +168,7 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 		valid = entry_is_valid((void *)tbl->entry + i * tbl->desc_size,
 				       &md);
 		size = md.num_pages << EFI_PAGE_SHIFT;
-		if (efi_enabled(EFI_DBG) || !valid)
+		if (log_once && (efi_enabled(EFI_DBG) || !valid))
 			pr_info("%s 0x%012llx-0x%012llx %s\n",
 				valid ? "" : "!", md.phys_addr,
 				md.phys_addr + size - 1,
@@ -179,6 +180,7 @@ int __init efi_memattr_apply_permissions(struct mm_struct *mm,
 				pr_err("Error updating mappings, skipping subsequent md's\n");
 		}
 	}
+	log_once = false;
 	memunmap(tbl);
 	return ret;
 }
