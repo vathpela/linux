@@ -15,6 +15,7 @@
 
 struct efi_runtime_map_entry {
 	efi_memory_desc_t md;
+	u64 perms;
 	struct kobject kobj;   /* kobject for each entry */
 };
 
@@ -33,6 +34,11 @@ static inline struct map_attribute *to_map_attr(struct attribute *attr)
 static ssize_t type_show(struct efi_runtime_map_entry *entry, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "0x%x\n", entry->md.type);
+}
+
+static ssize_t perms_show(struct efi_runtime_map_entry *entry, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "0x%llx\n", entry->perms);
 }
 
 #define EFI_RUNTIME_FIELD(var) entry->md.var
@@ -67,6 +73,7 @@ static struct map_attribute map_phys_addr_attr = __ATTR_RO_MODE(phys_addr, 0400)
 static struct map_attribute map_virt_addr_attr = __ATTR_RO_MODE(virt_addr, 0400);
 static struct map_attribute map_num_pages_attr = __ATTR_RO_MODE(num_pages, 0400);
 static struct map_attribute map_attribute_attr = __ATTR_RO_MODE(attribute, 0400);
+static struct map_attribute map_perms_attr = __ATTR_RO_MODE(perms, 0400);
 
 /*
  * These are default attributes that are added for every memmap entry.
@@ -77,6 +84,7 @@ static struct attribute *def_attrs[] = {
 	&map_virt_addr_attr.attr,
 	&map_num_pages_attr.attr,
 	&map_attribute_attr.attr,
+	&map_perms_attr.attr,
 	NULL
 };
 
@@ -102,7 +110,8 @@ static struct kset *map_kset;
 
 static struct efi_runtime_map_entry *
 add_sysfs_runtime_map_entry(struct kobject *kobj, int nr,
-			    efi_memory_desc_t *md)
+			    const efi_memory_desc_t *md,
+			    const efi_memory_desc_t *matd)
 {
 	int ret;
 	struct efi_runtime_map_entry *entry;
@@ -121,6 +130,7 @@ add_sysfs_runtime_map_entry(struct kobject *kobj, int nr,
 	}
 
 	memcpy(&entry->md, md, sizeof(efi_memory_desc_t));
+	entry->perms = matd->attribute;
 
 	kobject_init(&entry->kobj, &map_ktype);
 	entry->kobj.kset = map_kset;
@@ -156,35 +166,57 @@ int efi_runtime_map_copy(void *buf, size_t bufsz)
 	return 0;
 }
 
+static int __init count_memattr_entries(const efi_memory_desc_t *matd,
+					const efi_memory_desc_t *md,
+					void *state)
+{
+	struct range range;
+	int *nr_map = (int *)state;
+
+	range.start = matd->phys_addr;
+	range.end = range.start + (matd->num_pages << EFI_PAGE_SHIFT) - 1;
+
+	*nr_map += efi_memmap_split_count(md, &range);
+	return 0;
+}
+
+static int __init add_runtime_map_entries(const efi_memory_desc_t *matd,
+					  const efi_memory_desc_t *md,
+					  void *state)
+{
+	int *i = (int *)state;
+	struct efi_runtime_map_entry *entry;
+
+	entry = add_sysfs_runtime_map_entry(efi_kobj, *i, md, matd);
+	if (IS_ERR(entry))
+		return PTR_ERR(entry);
+	map_entries[(*i)++] = entry;
+	return 0;
+}
+
 int __init efi_runtime_map_init(struct kobject *efi_kobj)
 {
-	int i, j, ret = 0;
 	struct efi_runtime_map_entry *entry;
-	efi_memory_desc_t *md;
+	int i = 0, j, ret = 0;
+	int nr_map = 0;
 
 	if (!efi_enabled(EFI_MEMMAP))
 		return 0;
 
-	map_entries = kcalloc(efi.memmap.nr_map, sizeof(entry), GFP_KERNEL);
+	efi_memattr_visit_valid(count_memattr_entries, &nr_map);
+
+	map_entries = kcalloc(nr_map, sizeof(*entry), GFP_KERNEL);
 	if (!map_entries) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	i = 0;
-	for_each_efi_memory_desc(md) {
-		entry = add_sysfs_runtime_map_entry(efi_kobj, i, md);
-		if (IS_ERR(entry)) {
-			ret = PTR_ERR(entry);
-			goto out_add_entry;
-		}
-		*(map_entries + i++) = entry;
-	}
+	ret = efi_memattr_visit_valid(add_runtime_map_entries, &i);
+	if (ret == 0)
+		return 0;
 
-	return 0;
-out_add_entry:
 	for (j = i - 1; j >= 0; j--) {
-		entry = *(map_entries + j);
+		entry = map_entries[j];
 		kobject_put(&entry->kobj);
 	}
 out:

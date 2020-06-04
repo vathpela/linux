@@ -247,7 +247,7 @@ int __init efi_memmap_install(struct efi_memory_map_data *data)
  * Returns the number of additional EFI memmap entries required to
  * accomodate @range.
  */
-int __init efi_memmap_split_count(efi_memory_desc_t *md, struct range *range)
+int __init efi_memmap_split_count(const efi_memory_desc_t *md, struct range *range)
 {
 	u64 m_start, m_end;
 	u64 start, end;

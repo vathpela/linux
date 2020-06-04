@@ -26,9 +26,11 @@ Description:	Switching efi runtime services to virtual mode requires
 
 		attribute : The attributes of the memory range.
 		num_pages : The size of the memory range in pages.
+		perms     : The permissions requested by the Memory
+			    Attributes EFI configuration table.
 		phys_addr : The physical address of the memory range.
 		type      : The type of the memory range.
 		virt_addr : The virtual address of the memory range.
 
 		Above values are all hexadecimal numbers with the '0x' prefix.
-Users:		Kexec
+Users:		Kexec, fwupd
