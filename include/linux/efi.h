@@ -72,8 +72,10 @@ typedef void *efi_handle_t;
  */
 typedef guid_t efi_guid_t __aligned(__alignof__(u32));
 
-#define EFI_GUID(a,b,c,d0,d1,d2,d3,d4,d5,d6,d7) \
-	GUID_INIT(a, b, c, d0, d1, d2, d3, d4, d5, d6, d7)
+#define EFI_GUID(a, b, c, d...)	(efi_guid_t){ {				\
+	(u8)(a), (u8)((a) >> 8), (u8)((a) >> 16), (u8)((a) >> 24),	\
+	(u8)(b), (u8)((b) >> 8),					\
+	(u8)(c), (u8)((c) >> 8), d } }
 
 /*
  * Generic EFI table header
