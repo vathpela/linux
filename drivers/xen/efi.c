@@ -116,7 +116,8 @@ static efi_status_t xen_efi_set_wakeup_time(efi_bool_t enabled, efi_time_t *tm)
 	return efi_data(op).status;
 }
 
-static efi_status_t xen_efi_get_variable(efi_char16_t *name, efi_guid_t *vendor,
+static efi_status_t xen_efi_get_variable(const efi_char16_t *name,
+					 const efi_guid_t *vendor,
 					 u32 *attr, unsigned long *data_size,
 					 void *data)
 {
@@ -162,7 +163,8 @@ static efi_status_t xen_efi_get_next_variable(unsigned long *name_size,
 	return efi_data(op).status;
 }
 
-static efi_status_t xen_efi_set_variable(efi_char16_t *name, efi_guid_t *vendor,
+static efi_status_t xen_efi_set_variable(const efi_char16_t *name,
+					 const efi_guid_t *vendor,
 					 u32 attr, unsigned long data_size,
 					 void *data)
 {
