@@ -984,12 +984,23 @@ void __init efi_printk_stp(char *str)
 }
 
 #ifdef CONFIG_ARCH_EFI
-static void __init efi_start_bs_thread(void)
+static int __init efi_start_bs_thread(void)
 {
-	BUG_ON(!efi.systab);
+	void *p;
+	int size = efi_enabled(EFI_64BIT) ? sizeof(efi_system_table_64_t)
+					  : sizeof(efi_system_table_32_t);
+
+	BUG_ON(!efi_systab_phys);
+	p = early_memremap_ro(efi_systab_phys, size);
+	if (p == NULL) {
+		pr_err("Couldn't map the system table!\n");
+		return -ENOMEM;
+	}
 	efi_printk_stp(__FILE__ ":" __stringify(__LINE__) " efi_printk_stp got here\n");
 	printk("%s:%d printk got here\n", __FILE__, __LINE__);
-	efi_bs_init(efi.systab);
+	efi_bs_init(p);
+
+	return 0;
 }
 
 device_initcall(efi_start_bs_thread);
