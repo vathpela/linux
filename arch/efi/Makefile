@@ -7,10 +7,10 @@ $(info arch/efi/Makefile:6 ARCH_DIR:$(ARCH_DIR))
 
 filechk_gen_header = $<
 
-HEADER_ARCH 	:= $(SUBARCH)
+HEADER_ARCH := $(SUBARCH)
 
 ifneq ($(filter $(SUBARCH),x86 x86_64 i386),)
-	HEADER_ARCH := x86
+        HEADER_ARCH := x86
 endif
 override SRCARCH := $(HEADER_ARCH)
 
@@ -26,13 +26,13 @@ include $(HOST_DIR)/Makefile
 $(info arch/efi/Makefile:26 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 
 ifeq ($(SUBARCH),x86)
-	ifeq ($(shell uname -m),x86_64)
-		KBUILD_DEFCONFIG := x86_64_efi_defconfig
-	else
-		KBUILD_DEFCONFIG := i386_efi_defconfig
-	endif
+        ifeq ($(shell uname -m),x86_64)
+                KBUILD_DEFCONFIG := x86_64_efi_defconfig
+        else
+                KBUILD_DEFCONFIG := i386_efi_defconfig
+        endif
 else
-	KBUILD_DEFCONFIG := $(SUBARCH)_efi_defconfig
+        KBUILD_DEFCONFIG := $(SUBARCH)_efi_defconfig
 endif
 
 SHARED_HEADERS	:= $(ARCH_DIR)/include/shared
@@ -47,13 +47,15 @@ KBUILD_CPPFLAGS	+= -I$(srctree)/$(HOST_DIR)/efi \
 		   -I$(objtree)/$(HOST_DIR)/include/generated \
 		   -I$(objtree)/$(HOST_DIR)/include/generated/uapi
 
+$(info arch/efi/Makefile:50 ARCH_KERNEL_DEFINES:$(ARCH_KERNEL_DEFINES))
 KERNEL_DEFINES	= $(strip $(ARCH_KERNEL_DEFINES))
 
 # override asm-generic := -f $(srctree)/$(HOST_DIR)/efi/Makefile.asm-generic obj
 
 KBUILD_CFLAGS	+= $(CFLAGS) $(CFLAGS-y) \
-		   $(KERNEL_DEFINES) -D__arch_efi__ \
+		   -D__arch_efi__ \
 		   $(ARCH_INCLUDE) $(MODE_INCLUDE)
+override KBUILD_CFLAGS := $(KBUILD_CFLAGS)
 
 KBUILD_AFLAGS	+= $(ARCH_INCLUDE)
 

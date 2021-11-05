@@ -17,8 +17,8 @@ config OUTPUT_FORMAT
 
 config ARCH_DEFCONFIG
 	string
-	default "arch/efi/configs/i386_efi_defconfig" if X86_32
-	default "arch/efi/configs/x86_64_efi_defconfig" if X86_64
+	default "arch/x86/configs/i386_efi_defconfig" if X86_32
+	default "arch/x86/configs/x86_64_efi_defconfig" if X86_64
 
 config ARCH_EFI_X86
 	def_bool y
@@ -34,4 +34,4 @@ config ARCH_SUSPEND_POSSIBLE
 config X86_SYSFB
 	def_bool !ARCH_EFI
 
-source "arch/x86/Kconfig"
+#source "arch/x86/Kconfig"

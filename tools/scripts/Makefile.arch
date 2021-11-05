@@ -17,6 +17,7 @@ ifeq ($(ARCH),efi)
         HEADER_ARCH := $(SRCARCH)
 else
         SRCARCH := $(ARCH)
+        HEADER_ARCH := $(ARCH)
 endif
 
 # Additional ARCH settings for x86

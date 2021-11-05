@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
 
+if "$(ARCH)" = "efi"
+source "arch/efi/Kconfig"
+endif
+
 #if ARCH_EFI
 #source "arch/efi/Kconfig.$(SRCARCH)"
 #else # ARCH_EFI

@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 # XXX temporary hack -- pjones
 override ARCH := efi
-$(info Makefile:4 ARCH:$(ARCH))
 
 VERSION = 5
 PATCHLEVEL = 15
@@ -385,13 +384,13 @@ include $(srctree)/scripts/subarch.include
 # Alternatively CROSS_COMPILE can be set in the environment.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-$(info Makefile:388 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 ARCH		?= $(SUBARCH)
 
 # Architecture as present in compile.h
 ifeq ($(ARCH),efi)
         UTS_MACHINE := $(SUBARCH)
         SRCARCH := $(SUBARCH)
+        HEADER_ARCH := $(SUBARCH)
 else
         UTS_MACHINE := $(ARCH)
         SRCARCH := $(ARCH)
@@ -418,7 +417,6 @@ ifeq ($(ARCH),parisc64)
        SRCARCH := parisc
 endif
 
-$(info Makefile:422 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 export cross_compiling :=
 ifneq ($(SRCARCH),$(SUBARCH))
 cross_compiling := 1
@@ -622,14 +620,14 @@ ifdef config-build
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
 ifeq ($(ARCH),efi)
-$(info Makefile:623 ARCH:$(ARCH) SRCARCH:$(SRCARCH) sourcing $(srctree)/arch/$(ARCH)/Makefile)
+$(info Makefile:623 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH) sourcing $(srctree)/arch/$(ARCH)/Makefile)
 include $(srctree)/arch/$(ARCH)/Makefile
 else
-$(info Makefile:626 ARCH:$(ARCH) SRCARCH:$(SRCARCH) sourcing $(srctree)/arch/$(SRCARCH)/Makefile)
+$(info Makefile:626 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH) sourcing $(srctree)/arch/$(SRCARCH)/Makefile)
 include $(srctree)/arch/$(SRCARCH)/Makefile
 endif
+$(info Makefile:628 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH))
 export KBUILD_DEFCONFIG KBUILD_KCONFIG CC_VERSION_TEXT
-$(info Makefile:630 KBUILD_DEFCONFIG:$(KBUILD_DEFCONFIG))
 
 config: outputmakefile scripts_basic FORCE
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
