@@ -716,10 +716,11 @@ unsigned long efi_main(efi_handle_t handle,
 			     hdr->kernel_alignment);
 	buffer_end = buffer_start + hdr->init_size;
 
-	if ((buffer_start < LOAD_PHYSICAL_ADDR)                                 ||
-	    (IS_ENABLED(CONFIG_X86_32) && buffer_end > KERNEL_IMAGE_SIZE)       ||
-	    (IS_ENABLED(CONFIG_X86_64) && buffer_end > MAXMEM_X86_64_4LEVEL)    ||
-	    (image_offset == 0)) {
+	if (!IS_ENABLED(CONFIG_ARCH_EFI) &&
+	    ((buffer_start < LOAD_PHYSICAL_ADDR)                                 ||
+	     (IS_ENABLED(CONFIG_X86_32) && buffer_end > KERNEL_IMAGE_SIZE)       ||
+	     (IS_ENABLED(CONFIG_X86_64) && buffer_end > MAXMEM_X86_64_4LEVEL)    ||
+	     (image_offset == 0))) {
 		extern char _bss[];
 
 		efi_printk("This is code that shouldn't be run on ARCH=efi\n");
