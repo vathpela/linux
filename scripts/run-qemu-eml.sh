@@ -26,7 +26,7 @@ cleanup() {
         fi
     done
     sudo brctl delif virbr0 vnet${tapnum}
-    sudo ifconfig vnet${tapnum} down
+    sudo ip link set vnet${tapnum} down
     sudo ip tuntap del vnet${tapnum} mode tap
 
     rm -f eml.img eml_VARS.fd
@@ -139,14 +139,11 @@ rmdir eml
 sudo dmsetup remove "${part}"
 truncate -s 0 eml.tty.log eml.screen.tty.log eml.log
 
-# tty=$(tty)
-
 sudo ip tuntap add dev vnet${tapnum} mode tap vnet_hdr
 sudo brctl addif virbr0 vnet${tapnum}
 
-sudo ifconfig vnet${tapnum} up
-sudo ifconfig virbr0 up
-sudo ifconfig virbr0-nic up || :
+sudo ip link set vnet${tapnum} up
+sudo ip link set virbr0 up
 
 strace -o /home/pjones/devel/kernel.org/linux/efi-mode-linux/rqe.strace -v -f -s1024 -tt qemu-system-x86_64 \
     -machine accel=kvm \
@@ -179,8 +176,6 @@ strace -o /home/pjones/devel/kernel.org/linux/efi-mode-linux/rqe.strace -v -f -s
     -device virtio-serial-pci,id=virtio-serial0,bus=pci.2,addr=0x0 \
     -drive file="$PWD/eml.img",format=raw,if=none,id=drive-virtio-disk0 \
     -device virtio-blk-pci,scsi=off,bus=pci.3,addr=0x0,drive=drive-virtio-disk0,id=virtio-disk0,bootindex=2 \
-    -drive file=/var/lib/libvirt/images/baytrail.qcow2,format=qcow2,if=none,id=drive-virtio-disk1 \
-    -device virtio-blk-pci,scsi=off,bus=pci.4,addr=0x0,drive=drive-virtio-disk1,id=virtio-disk1,bootindex=3 \
     -drive file=/usr/share/OVMF/UefiShell.iso,format=raw,if=none,id=drive-sata0-0-0,media=cdrom,readonly=on \
     -device ide-cd,bus=ide.0,drive=drive-sata0-0-0,id=sata0-0-0,bootindex=1 \
     -device qxl-vga,id=video0,ram_size=67108864,vram_size=67108864,vram64_size_mb=0,vgamem_mb=16,max_outputs=1,bus=pcie.0,addr=0x1 \
