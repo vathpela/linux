@@ -682,10 +682,6 @@ endif
 ifeq ($(KBUILD_EXTMOD),)
 # Objects we will link into vmlinux / subdirs we need to visit
 core-y		:= init/ usr/ arch/$(SRCARCH)/
-ifeq (core-$(CONFIG_ARCH_EFI),core-y)
-override core-y	:= arch/efi/ $(core-y)
-endif
-$(info Makefile:687 core-y:$(core-y))
 drivers-y	:= drivers/ sound/
 drivers-$(CONFIG_SAMPLES) += samples/
 drivers-$(CONFIG_NET) += net/
@@ -1121,7 +1117,6 @@ ifeq ($(KBUILD_EXTMOD),)
 core-y			+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/
 core-$(CONFIG_BLOCK)	+= block/
 core-$(CONFIG_ARCH_EFI)	+= arch/efi/
-$(info Makefile:1124 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 
 vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \

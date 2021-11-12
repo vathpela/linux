@@ -44,7 +44,6 @@ export REALMODE_CFLAGS
 # e.g.: obj-y += foo_$(BITS).o
 export BITS
 
-$(info arch/x86/Makefile:44 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
 #
 # Prevent GCC from generating any FP code by mistake.
 #
@@ -54,14 +53,13 @@ $(info arch/x86/Makefile:44 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
 #
 KBUILD_CFLAGS += -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx
 
-KBUILD_CFLAGS := $(KBUILD_CFLAGS)
-KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
-
-# Intel CET isn't enabled in the kernel
 # no idea why, but calling
 # KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
 # here winds up with a KBUILD_CFLAGS loop. -- pjones
-KBUILD_CFLAGS := $(KBUILD_CFLAGS) $(call cc-option,-fcf-protection=none)
+KBUILD_CFLAGS := $(KBUILD_CFLAGS)
+
+# Intel CET isn't enabled in the kernel
+KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
 
 ifeq ($(CONFIG_X86_32),y)
         BITS := 32
@@ -170,7 +168,6 @@ ifeq ($(ACCUMULATE_OUTGOING_ARGS), 1)
 	KBUILD_CFLAGS += $(call cc-option,-maccumulate-outgoing-args,)
 endif
 
-$(info arch/x86/Makefile:163 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
 # Workaround for a gcc prelease that unfortunately was shipped in a suse release
 KBUILD_CFLAGS += -Wno-sign-compare
 #
