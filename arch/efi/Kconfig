@@ -74,3 +74,5 @@ source "arch/$(HEADER_ARCH)/efi/Kconfig"
 source "drivers/firmware/Kconfig"
 
 source "arch/efi/drivers/Kconfig"
+
+source "arch/efi/kernel/Kconfig"

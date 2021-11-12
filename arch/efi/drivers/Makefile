@@ -65,3 +65,6 @@
 # # pcap_user.o must be added explicitly.
 # EFI_OBJS := fd.o null.o pty.o tty.o xterm.o slip_common.o pcap_user.o vde_user.o vector_user.o
 # CFLAGS_null.o = -DDEV_NULL=$(DEV_NULL_PATH)
+
+$(info arch/efi/drivers/Makefile core-y:$(core-y))
+$(info arch/efi/drivers/Makefile obj-y:$(obj-y))

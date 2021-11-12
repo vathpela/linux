@@ -16,9 +16,12 @@ override SRCARCH := $(HEADER_ARCH)
 
 HOST_DIR := arch/$(HEADER_ARCH)
 
-core-y += $(ARCH_DIR)/kernel/ \
+obj-y += $(ARCH_DIR)/kernel/ \
 	  $(ARCH_DIR)/drivers/ \
 	  $(HOST_DIR)/efi/
+
+$(info arch/efi/Makefile: core-y:$(core-y))
+$(info arch/efi/Makefile: obj-y:$(obj-y))
 
 include $(HOST_DIR)/Makefile
 
