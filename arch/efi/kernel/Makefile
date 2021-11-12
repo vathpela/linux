@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: GPL-2.0
-#
-# Copyright 2018 Peter Jones <pjones@redhat.com>
+# (info arch/efi/kernel/Makefile:2 got here)
 
 # Avoid instrumenting ARCH=efi kernel code so we don't access the
 # instrumentation buffer before it's initialized.
 KCOV_INSTRUMENT                := n
 
-$(info arch/efi/kernel/Makefile:9 got here)
+CPPFLAGS_vmlinux.lds := -DSTART=$(LDS_START)		\
+                        -DELF_ARCH=$(LDS_ELF_ARCH)	\
+                        -DELF_FORMAT=$(LDS_ELF_FORMAT)	\
+			$(LDS_EXTRA)
+extra-y := vmlinux.lds
+
+obj-y += bs.o
 
 clean-files :=
-
-head-y += bs.o
-
-$(info arch/efi/drivers/Makefile core-y:$(core-y))
-$(info arch/efi/kernel/Makefile obj-y:$(obj-y))
