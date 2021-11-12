@@ -1,5 +1,7 @@
-objtool-y += arch/$(HEADER_ARCH)/
 objtool-y += arch/$(SRCARCH)/
+ifneq ($(HEADER_ARCH),$(SRCARCH))
+objtool-y += arch/$(HEADER_ARCH)/
+endif
 
 objtool-y += weak.o
 

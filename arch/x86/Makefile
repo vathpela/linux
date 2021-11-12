@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
 # Unified Makefile for i386 and x86_64
+ifeq ($(ARCH_X86_MAKEFILE_ONCE),)
+ARCH_X86_MAKEFILE_ONCE := y
+export ARCH_X86_MAKEFILE_ONCE
 
 # select defconfig based on actual architecture
 ifeq ($(ARCH),x86)
@@ -41,6 +44,7 @@ export REALMODE_CFLAGS
 # e.g.: obj-y += foo_$(BITS).o
 export BITS
 
+$(info arch/x86/Makefile:44 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
 #
 # Prevent GCC from generating any FP code by mistake.
 #
@@ -50,8 +54,14 @@ export BITS
 #
 KBUILD_CFLAGS += -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx
 
-# Intel CET isn't enabled in the kernel
+KBUILD_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
+
+# Intel CET isn't enabled in the kernel
+# no idea why, but calling
+# KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
+# here winds up with a KBUILD_CFLAGS loop. -- pjones
+KBUILD_CFLAGS := $(KBUILD_CFLAGS) $(call cc-option,-fcf-protection=none)
 
 ifeq ($(CONFIG_X86_32),y)
         BITS := 32
@@ -160,6 +170,7 @@ ifeq ($(ACCUMULATE_OUTGOING_ARGS), 1)
 	KBUILD_CFLAGS += $(call cc-option,-maccumulate-outgoing-args,)
 endif
 
+$(info arch/x86/Makefile:163 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
 # Workaround for a gcc prelease that unfortunately was shipped in a suse release
 KBUILD_CFLAGS += -Wno-sign-compare
 #
@@ -167,7 +178,9 @@ KBUILD_CFLAGS += -fno-asynchronous-unwind-tables
 
 # Avoid indirect branches in kernel to deal with Spectre
 ifdef CONFIG_RETPOLINE
+  $(info arch/x86/Makefile:171 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
   KBUILD_CFLAGS += $(RETPOLINE_CFLAGS)
+  $(info arch/x86/Makefile:173 KBUILD_CFLAGS:"$(KBUILD_CFLAGS)")
   # Additionally, avoid generating expensive indirect jumps which
   # are subject to retpolines for small number of switch cases.
   # clang turns off jump table generation by default when under
@@ -303,3 +316,4 @@ define archhelp
   echo  '  xen.config		- Enable Kconfig items for running this kernel as a Xen guest'
 
 endef
+endif

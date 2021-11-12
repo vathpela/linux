@@ -387,6 +387,7 @@ include $(srctree)/scripts/subarch.include
 ARCH		?= $(SUBARCH)
 
 # Architecture as present in compile.h
+$(info Makefile:390 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 ifeq ($(ARCH),efi)
         UTS_MACHINE := $(SUBARCH)
         SRCARCH := $(SUBARCH)
@@ -395,6 +396,7 @@ else
         UTS_MACHINE := $(ARCH)
         SRCARCH := $(ARCH)
 endif
+export UTS_MACHINE HEADER_ARCH SRCARCH
 
 # Additional ARCH settings for x86
 ifeq ($(ARCH),i386)
@@ -620,13 +622,12 @@ ifdef config-build
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
 ifeq ($(ARCH),efi)
-$(info Makefile:623 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH) sourcing $(srctree)/arch/$(ARCH)/Makefile)
+$(info Makefile:625 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH) sourcing $(srctree)/arch/$(ARCH)/Makefile)
 include $(srctree)/arch/$(ARCH)/Makefile
 else
-$(info Makefile:626 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH) sourcing $(srctree)/arch/$(SRCARCH)/Makefile)
 include $(srctree)/arch/$(SRCARCH)/Makefile
 endif
-$(info Makefile:628 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH))
+$(info Makefile:631 ARCH:$(ARCH) SRCARCH:$(SRCARCH) HEADER_ARCH:$(HEADER_ARCH))
 export KBUILD_DEFCONFIG KBUILD_KCONFIG CC_VERSION_TEXT
 
 config: outputmakefile scripts_basic FORCE
@@ -681,6 +682,10 @@ endif
 ifeq ($(KBUILD_EXTMOD),)
 # Objects we will link into vmlinux / subdirs we need to visit
 core-y		:= init/ usr/ arch/$(SRCARCH)/
+ifeq (core-$(CONFIG_ARCH_EFI),core-y)
+override core-y	:= arch/efi/ $(core-y)
+endif
+$(info Makefile:687 core-y:$(core-y))
 drivers-y	:= drivers/ sound/
 drivers-$(CONFIG_SAMPLES) += samples/
 drivers-$(CONFIG_NET) += net/
@@ -1115,6 +1120,8 @@ export MODULES_NSDEPS := $(extmod_prefix)modules.nsdeps
 ifeq ($(KBUILD_EXTMOD),)
 core-y			+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/
 core-$(CONFIG_BLOCK)	+= block/
+core-$(CONFIG_ARCH_EFI)	+= arch/efi/
+$(info Makefile:1124 ARCH:$(ARCH) SRCARCH:$(SRCARCH) SUBARCH:$(SUBARCH))
 
 vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \

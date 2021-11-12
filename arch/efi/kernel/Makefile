@@ -6,9 +6,11 @@
 # instrumentation buffer before it's initialized.
 KCOV_INSTRUMENT                := n
 
+$(info arch/efi/kernel/Makefile:9 got here)
+
 clean-files :=
 
-obj-y = bs.o
+head-y += bs.o
 
 $(info arch/efi/drivers/Makefile core-y:$(core-y))
 $(info arch/efi/kernel/Makefile obj-y:$(obj-y))

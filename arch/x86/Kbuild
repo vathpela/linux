@@ -20,6 +20,7 @@ obj-y += mm/
 obj-y += crypto/
 
 obj-$(CONFIG_IA32_EMULATION) += ia32/
+obj-$(CONFIG_ARCH_EFI) += efi/
 
 obj-y += platform/
 obj-y += net/
