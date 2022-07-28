@@ -212,8 +212,119 @@ static void retrieve_apple_device_properties(struct boot_params *boot_params)
 	}
 }
 
+static efi_status_t
+efi_get_memory_descriptor(struct efi_boot_memmap *map,
+			  efi_memory_desc_t **desc,
+			  unsigned long phys_addr)
+{
+	efi_memory_desc_t *map_end, *next = NULL;
+
+	if (!*desc)
+		*desc = *(map->map);
+
+	map_end = (efi_memory_desc_t *)((unsigned long)*desc
+					+ (unsigned long)*(map->map_size));
+
+	for (; *desc && *desc < map_end; *desc = next) {
+		next = (efi_memory_desc_t *)((unsigned long)*desc + *(map->desc_size));
+
+		if (phys_addr < (*desc)->phys_addr)
+			continue;
+		if (phys_addr > (*desc)->phys_addr + ((*desc)->num_pages * EFI_PAGE_SIZE))
+			continue;
+
+		return EFI_SUCCESS;
+	}
+}
+
+typedef union efi_memory_attribute_protocol efi_memory_attribute_protocol_t;
+
+union efi_memory_attribute_protocol {
+	struct {
+		efi_status_t (__efiapi *get_memory_attributes)(efi_memory_attribute_protocol_t *,
+							       efi_physical_addr_t,
+							       uint64_t, uint64_t *);
+		efi_status_t (__efiapi *set_memory_attributes)(efi_memory_attribute_protocol_t *,
+							       efi_physical_addr_t,
+							       uint64_t, uint64_t);
+		efi_status_t (__efiapi *clear_memory_attributes)(efi_memory_attribute_protocol_t *,
+							       efi_physical_addr_t,
+							       uint64_t, uint64_t);
+	};
+	struct {
+		u32 get_memory_attributes;
+		u32 set_memory_attributes;
+		u32 clear_memory_attributes;
+	} mixed_mode;
+};
+
+static efi_status_t
+efi_unprotect_memory(unsigned long start, unsigned long size)
+{
+	efi_guid_t mem_attr_proto = EFI_MEMORY_ATTRIBUTE_PROTOCOL_GUID;
+	efi_memory_attribute_protocol_t *mem_attr = NULL;
+	efi_status_t status;
+
+	status = efi_bs_call(locate_protocol, &mem_attr_proto, NULL,
+			     (void **)&mem_attr);
+	if (status != EFI_SUCCESS)
+		return status;
+
+	status = efi_call_proto(mem_attr, clear_memory_attributes, start, size,
+				EFI_MEMORY_RO | EFI_MEMORY_XP | EFI_MEMORY_RP);
+	return status;
+}
+
+static efi_status_t
+adjust_memory_range_protection_efi(unsigned long start, unsigned long size)
+{
+	efi_status_t status;
+	struct efi_boot_memmap map;
+	efi_memory_desc_t *desc = NULL;
+	unsigned long end, next;
+	unsigned long rounded_start, rounded_end;
+	unsigned long unprotect_start, unprotect_size;
+	int has_system_memory = 0;
+
+	rounded_start = rounddown(start, EFI_PAGE_SIZE);
+	rounded_end = roundup(start + size, EFI_PAGE_SIZE);
+
+	status = efi_get_memory_map(&map);
+	if (status != EFI_SUCCESS)
+		return status;
+
+	desc = NULL;
+
+	for (end = start + size; start < end; start = next) {
+		status = efi_get_memory_descriptor(&map, &desc, start);
+		if (status != EFI_SUCCESS)
+			return status;
+
+		next = start + min(desc->num_pages * EFI_PAGE_SIZE, (u64)size);
+
+		/*
+		 * Only system memory is suitable for trampoline/kernel image placement,
+		 * so only this type of memory needs its attributes to be modified.
+		 */
+		if (desc->type != EFI_CONVENTIONAL_MEMORY ||
+		    (desc->attribute & (EFI_MEMORY_RO | EFI_MEMORY_XP) == 0))
+			continue;
+
+		unprotect_start = max(rounded_start, (unsigned long)desc->phys_addr);
+		unprotect_size = min(rounded_end, next) - unprotect_start;
+
+		status = efi_unprotect_memory(unprotect_start, unprotect_size);
+		if (status != EFI_SUCCESS) {
+			efi_warn("Unable to unprotect memory range [%08lx,%08lx]: %lx\n",
+				 unprotect_start,
+				 unprotect_start + unprotect_size,
+				 status);
+		}
+	}
+}
+
 static void
-adjust_memory_range_protection(unsigned long start, unsigned long size)
+adjust_memory_range_protection_dxe(unsigned long start, unsigned long size)
 {
 	efi_status_t status;
 	efi_gcd_memory_space_desc_t desc;
@@ -222,7 +333,7 @@ adjust_memory_range_protection(unsigned long start, unsigned long size)
 	unsigned long unprotect_start, unprotect_size;
 	int has_system_memory = 0;
 
-	if (efi_dxe_table == NULL)
+	if (efi_dxe_table == NULL || !IS_ENABLED(CONFIG_EFI_DXE_MEM_ATTRIBUTES))
 		return;
 
 	rounded_start = rounddown(start, EFI_PAGE_SIZE);
@@ -266,6 +377,21 @@ adjust_memory_range_protection(unsigned long start, unsigned long size)
 				 status);
 		}
 	}
+}
+
+static void
+adjust_memory_range_protection(unsigned long start, unsigned long size)
+{
+	efi_status_t status;
+
+	/*
+	 * Since DXE isn't required to be implemented for a compliant UEFI
+	 * firmware, attempt to use the UEFI 2.10 protocol first, and if that
+	 * fails, try the DXE protocol.
+	 */
+	status = adjust_memory_range_protection_efi(start, size);
+	if (status != EFI_SUCCESS)
+		adjust_memory_range_protection_dxe(start, size);
 }
 
 /*
@@ -325,8 +451,7 @@ static void setup_quirks(struct boot_params *boot_params,
 			retrieve_apple_device_properties(boot_params);
 	}
 
-	if (IS_ENABLED(CONFIG_EFI_DXE_MEM_ATTRIBUTES))
-		setup_memory_protection(image_base, image_size);
+	setup_memory_protection(image_base, image_size);
 }
 
 /*
